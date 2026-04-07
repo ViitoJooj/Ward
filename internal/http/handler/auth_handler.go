@@ -67,7 +67,7 @@ func (c *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, token, err := c.authService.Login(input.Username, input.Email, input.Password)
+	user, token, err := c.authService.Login(input.Identifier, input.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -85,7 +85,8 @@ func (c *AuthHandler) Login(ctx *gin.Context) {
 			Updated_at: user.Updated_at.String(),
 			Created_at: user.Created_at.String(),
 		},
-		Token: token,
+		AccessToken:  token,
+		RefreshToken: token,
 	}
 
 	ctx.JSON(http.StatusOK, output)

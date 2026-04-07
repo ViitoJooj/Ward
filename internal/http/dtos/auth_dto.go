@@ -24,14 +24,14 @@ type RegisterOutput struct {
 
 // Login
 type LoginInput struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Identifier string `json:"identifier"`
+	Password   string `json:"password"`
 }
 
 type LoginOutput struct {
-	Success bool     `json:"success"`
-	Message string   `json:"message"`
-	Data    UserData `json:"data"`
-	Token   string   `json:"token"`
+	Success      bool     `json:"success"`
+	Message      string   `json:"message"`
+	Data         UserData `json:"data"`
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
 }
