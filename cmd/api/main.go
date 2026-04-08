@@ -19,11 +19,14 @@ func main() {
 	database.Conn()
 
 	authRepo := repository.NewSQLiteUserRepository(database.DB)
+	logRepo := repository.NewSQLiteRequestLogRepository(database.DB)
+
 	log := logger.NewLogger(os.Stdout)
 	authService := services.NewAuthService(authRepo, log)
 	authHandler := handler.NewAuthHandler(authService)
 
 	r := httpx.SetupRouter(authHandler)
 	handlerWithCors := middlewares.CorsMiddleware(r)
-	fasthttp.ListenAndServe(":7171", handlerWithCors)
+	handlerWithLogger := middlewares.RequestLoggerMiddleware(handlerWithCors, logRepo)
+	fasthttp.ListenAndServe(":7171", handlerWithLogger)
 }
