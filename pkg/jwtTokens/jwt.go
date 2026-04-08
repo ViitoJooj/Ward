@@ -26,7 +26,7 @@ func ValidateRefreshToken(tokenString string) (*jwt.Token, error) {
 	})
 }
 
-func GenerateToken(userID int) (string, error) {
+func GenerateToken(userID int64) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(15 * time.Minute).Unix(),

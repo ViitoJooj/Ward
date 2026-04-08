@@ -1,0 +1,6 @@
+POST http://localhost:7171/api/v1/applications
+
+{
+    "url": "http://localhost:8080",
+    "country": "brasil"
+}

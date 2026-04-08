@@ -27,17 +27,12 @@ func (s *AuthService) Register(user *domain.User) (*domain.User, error) {
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err)
 		return nil, errors.New("internal error")
-	}
-	if existing != nil {
+	} else if existing != nil {
 		log.Println("User already exists")
 		return nil, errors.New("invalid credentials")
 	}
 
-	newUser, err := domain.NewUser(
-		user.Username,
-		user.Email,
-		user.Password,
-	)
+	newUser, err := domain.NewUser(user.Username, user.Email, user.Password)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("internal error")
@@ -48,6 +43,7 @@ func (s *AuthService) Register(user *domain.User) (*domain.User, error) {
 		log.Println(err)
 		return nil, errors.New("internal error")
 	}
+
 	newUser.Password = hashedPassword
 
 	if err := s.userRepo.CreateUser(newUser); err != nil {
@@ -120,11 +116,14 @@ func (s *AuthService) Token(tokenString string) (*domain.User, error) {
 		log.Println("invalid token claims")
 		return nil, errors.New("invalid token")
 	}
-	userID, ok := claims["user_id"].(float64)
+
+	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
-		log.Println("invalid token claims")
+		log.Printf("user_id raw: %v (%T)\n", claims["user_id"], claims["user_id"])
 		return nil, errors.New("invalid token")
 	}
+
+	userID := int64(userIDFloat)
 
 	user, err := s.userRepo.FindUserByID(userID)
 	if err != nil {
@@ -135,5 +134,6 @@ func (s *AuthService) Token(tokenString string) (*domain.User, error) {
 		log.Println("User not exists.")
 		return nil, errors.New("invalid token")
 	}
+
 	return user, nil
 }

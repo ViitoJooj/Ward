@@ -6,20 +6,31 @@ import (
 	"github.com/ViitoJooj/door/internal/domain"
 )
 
-type SQLiteUserRepository struct {
+type SQLite struct {
 	db *sql.DB
 }
 
-func NewSQLiteUserRepository(db *sql.DB) UserRepository {
-	return &SQLiteUserRepository{db: db}
+func NewSQLiteRepository(db *sql.DB) (UserRepository, ApplicationRepository) {
+	repo := &SQLite{db: db}
+	return repo, repo
 }
 
 type UserRepository interface {
 	CreateUser(user *domain.User) error
-	FindUserByID(id float64) (*domain.User, error)
+	FindUserByID(id int64) (*domain.User, error)
 	FindUserByEmail(email string) (*domain.User, error)
 	FindUserByUsername(username string) (*domain.User, error)
 	ListUsers() ([]*domain.User, error)
 	UpdateUser(user *domain.User) error
-	DeleteUserByID(id float64) error
+	DeleteUserByID(id int64) error
+}
+
+type ApplicationRepository interface {
+	CreateApplication(application *domain.Application) error
+	FindApplicationByID(id int64) (*domain.Application, error)
+	FindApplicationByURL(url string) (*domain.Application, error)
+	FindApplicationByCountry(country string) (*domain.Application, error)
+	ListApplications() ([]*domain.Application, error)
+	UpdateApplication(application *domain.Application) error
+	DeleteApplicationByID(id int64) error
 }
