@@ -21,8 +21,8 @@ func (r *SQLite) UpdateUser(user *domain.User) error {
 func (r *SQLite) UpdateApplication(application *domain.Application) error {
 	_, err := r.db.Exec(`
 		UPDATE applications
-		SET url = $1, country = $2, created_by = $3, updated_at = $4
-		WHERE id = $5
+		SET url = ?, country = ?, created_by = ?, updated_at = ?
+		WHERE id = ?
 	`,
 		application.Url,
 		application.Country,

@@ -3,7 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
-	"strconv"
+	"fmt"
 
 	"github.com/ViitoJooj/door/internal/domain"
 	"github.com/ViitoJooj/door/internal/repository"
@@ -81,7 +81,8 @@ func (s *AuthService) Login(username string, email string, password string, ip s
 			return nil, "", errors.New("internal error")
 		}
 
-		s.logger.Info("user logged in / user_id: " + strconv.Itoa(user.ID) + " | ip: " + ip)
+		textLog := fmt.Sprintf("user logged in / user_id: %d | ip: %s", user.ID, ip)
+		s.logger.Info(textLog)
 		return user, token, nil
 	} else {
 		user, err := s.userRepo.FindUserByEmail(email)
@@ -105,7 +106,8 @@ func (s *AuthService) Login(username string, email string, password string, ip s
 			return nil, "", errors.New("internal error")
 		}
 
-		s.logger.Info("user logged in / user_id: " + strconv.Itoa(user.ID) + " | ip: " + ip)
+		textLog := fmt.Sprintf("user logged in / user_id: %d | ip: %s", user.ID, ip)
+		s.logger.Info(textLog)
 		return user, token, nil
 	}
 }
@@ -129,7 +131,7 @@ func (s *AuthService) Token(tokenString string) (*domain.User, error) {
 		return nil, errors.New("invalid token")
 	}
 
-	userID := int64(userIDFloat)
+	userID := int(userIDFloat)
 
 	user, err := s.userRepo.FindUserByID(userID)
 	if err != nil {

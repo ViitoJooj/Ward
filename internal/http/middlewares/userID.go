@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"log"
+	"strings"
 
 	"github.com/ViitoJooj/door/pkg/jwtTokens"
 	"github.com/golang-jwt/jwt/v4"
@@ -10,7 +11,7 @@ import (
 
 func UserIdMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		tokenString := string(ctx.Request.Header.Cookie("token"))
+		tokenString := strings.TrimPrefix(string(ctx.Request.Header.Peek("Authorization")), "Bearer ")
 		if tokenString == "" {
 			ctx.SetStatusCode(fasthttp.StatusUnauthorized)
 			return
@@ -37,7 +38,7 @@ func UserIdMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 			return
 		}
 
-		userId := int64(userIdFloat)
+		userId := int(userIdFloat)
 
 		ctx.SetUserValue("userId", userId)
 		next(ctx)

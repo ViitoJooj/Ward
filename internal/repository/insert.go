@@ -3,7 +3,7 @@ package repository
 import "github.com/ViitoJooj/door/internal/domain"
 
 func (r *SQLite) CreateUser(user *domain.User) error {
-	_, err := r.db.Exec(`INSERT INTO users (username, email, password, updated_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
+	_, err := r.db.Exec(`INSERT INTO users (username, email, password, updated_at, created_at) VALUES (?, ?, ?, ?, ?)`,
 		user.Username,
 		user.Email,
 		user.Password,
@@ -14,7 +14,7 @@ func (r *SQLite) CreateUser(user *domain.User) error {
 }
 
 func (r *SQLite) CreateApplication(application *domain.Application) error {
-	_, err := r.db.Exec(`INSERT INTO applications (url, country, created_by, updated_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
+	_, err := r.db.Exec(`INSERT INTO applications (url, country, created_by, updated_at, created_at) VALUES (?, ?, ?, ?, ?)`,
 		application.Url,
 		application.Country,
 		application.Created_by,

@@ -10,8 +10,8 @@ import (
 	"github.com/ViitoJooj/door/internal/services"
 	"github.com/ViitoJooj/door/pkg/database"
 	"github.com/ViitoJooj/door/pkg/dotenv"
-	"github.com/fasthttp/router"
 	"github.com/ViitoJooj/door/pkg/logger"
+	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 )
 
@@ -20,32 +20,32 @@ func main() {
 	database.Conn()
 	router := router.New()
 
+	//Log
+	log := logger.NewLogger(os.Stdout)
+	logRepo := repository.NewSQLiteRequestLogRepository(database.DB)
+
+	//Auth
 	authRepo, applicationRepo := repository.NewSQLiteRepository(database.DB)
-	authService := services.NewAuthService(authRepo)
+	authService := services.NewAuthService(authRepo, log)
 	authHandler := handler.NewAuthHandler(authService)
 
+	//Application
 	applicationService := services.NewApplicationService(applicationRepo, authRepo)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
 
+	//Proxy
 	proxyService := services.NewProxyService()
 	proxyHandler := handler.NewProxyHandler(proxyService)
 
+	//Routers
 	httpx.RegisterAuthRoutes(router, authHandler)
 	httpx.RegisterApplicationRouters(router, applicationHandler)
 	httpx.RegisterProxyRoutes(router, proxyHandler)
 
-	handlerWithCors := middlewares.CorsMiddleware(router.Handler)
+	//Middelwares
+	handlerWithLog := middlewares.RequestLoggerMiddleware(router.Handler, logRepo)
+	handlerWithCors := middlewares.CorsMiddleware(handlerWithLog)
 
 	fasthttp.ListenAndServe(":7171", handlerWithCors)
-	authRepo := repository.NewSQLiteUserRepository(database.DB)
-	logRepo := repository.NewSQLiteRequestLogRepository(database.DB)
 
-	log := logger.NewLogger(os.Stdout)
-	authService := services.NewAuthService(authRepo, log)
-	authHandler := handler.NewAuthHandler(authService)
-
-	r := httpx.SetupRouter(authHandler)
-	handlerWithCors := middlewares.CorsMiddleware(r)
-	handlerWithLogger := middlewares.RequestLoggerMiddleware(handlerWithCors, logRepo)
-	fasthttp.ListenAndServe(":7171", handlerWithLogger)
 }

@@ -87,7 +87,7 @@ func (r *SQLite) FindUserByEmail(email string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *SQLite) FindUserByID(id int64) (*domain.User, error) {
+func (r *SQLite) FindUserByID(id int) (*domain.User, error) {
 	row := r.db.QueryRow(`
 		SELECT id, username, email, password, updated_at, created_at
 		FROM users
@@ -144,13 +144,13 @@ func (r *SQLite) ListApplications() ([]*domain.Application, error) {
 	return applications, rows.Err()
 }
 
-func (r *SQLite) FindApplicationByID(id int64) (*domain.Application, error) {
+func (r *SQLite) FindApplicationByID(id int) (*domain.Application, error) {
 	application := &domain.Application{}
 
 	err := r.db.QueryRow(`
 		SELECT id, url, country, created_by, updated_at, created_at
 		FROM applications
-		WHERE id = $1
+		WHERE id = ?
 	`, id).Scan(
 		&application.ID,
 		&application.Url,
@@ -173,7 +173,7 @@ func (r *SQLite) FindApplicationByCountry(country string) (*domain.Application, 
 	err := r.db.QueryRow(`
 		SELECT id, url, country, created_by, updated_at, created_at
 		FROM applications
-		WHERE country = $1
+		WHERE country = ?
 	`, country).Scan(
 		&application.ID,
 		&application.Url,
@@ -196,7 +196,7 @@ func (r *SQLite) FindApplicationByURL(url string) (*domain.Application, error) {
 	err := r.db.QueryRow(`
 		SELECT id, url, country, created_by, updated_at, created_at
 		FROM applications
-		WHERE url = $1
+		WHERE url = ?
 	`, url).Scan(
 		&application.ID,
 		&application.Url,

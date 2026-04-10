@@ -20,7 +20,7 @@ func NewApplicationService(applicationRepo repository.ApplicationRepository, aut
 	}
 }
 
-func (s ApplicationService) Create(applicationUrl string, applicationCountry string, userID int64) (*domain.Application, *domain.User, error) {
+func (s ApplicationService) Create(applicationUrl string, applicationCountry string, userID int) (*domain.Application, *domain.User, error) {
 	exists, err := s.ApplicationRepo.FindApplicationByURL(applicationUrl)
 	if err != nil {
 		log.Println(err)
@@ -57,7 +57,7 @@ func (s ApplicationService) GetAll() ([]*domain.Application, error) {
 	return s.ApplicationRepo.ListApplications()
 }
 
-func (s ApplicationService) GetByID(id int64) (*domain.Application, error) {
+func (s ApplicationService) GetByID(id int) (*domain.Application, error) {
 	application, err := s.ApplicationRepo.FindApplicationByID(id)
 	if err != nil {
 		log.Println(err)
@@ -70,7 +70,7 @@ func (s ApplicationService) GetByID(id int64) (*domain.Application, error) {
 	return application, nil
 }
 
-func (s ApplicationService) DeleteById(id int64) (*domain.Application, *domain.User, error) {
+func (s ApplicationService) DeleteById(id int) (*domain.Application, *domain.User, error) {
 	application, err := s.ApplicationRepo.FindApplicationByID(id)
 	if err != nil {
 		log.Println(err)

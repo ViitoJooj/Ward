@@ -2,7 +2,7 @@ package dtos
 
 // Utils
 type UserData struct {
-	ID         int64  `json:"id"`
+	ID         int    `json:"id"`
 	Username   string `json:"username"`
 	Email      string `json:"email"`
 	Updated_at string `json:"updated_at"`

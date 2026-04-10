@@ -1,6 +1,6 @@
 package repository
 
-func (r *SQLite) DeleteUserByID(id int64) error {
+func (r *SQLite) DeleteUserByID(id int) error {
 	_, err := r.db.Exec(`
 		DELETE FROM users
 		WHERE id = ?
@@ -9,10 +9,10 @@ func (r *SQLite) DeleteUserByID(id int64) error {
 	return err
 }
 
-func (r *SQLite) DeleteApplicationByID(id int64) error {
+func (r *SQLite) DeleteApplicationByID(id int) error {
 	_, err := r.db.Exec(`
 		DELETE FROM applications
-		WHERE id = $1
+		WHERE id = ?
 	`, id)
 
 	return err

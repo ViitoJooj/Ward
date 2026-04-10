@@ -38,7 +38,7 @@ func (h *ApplicationHandler) Create(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	userId, ok := userIdRaw.(int64)
+	userId, ok := userIdRaw.(int)
 	if !ok {
 		ctx.SetStatusCode(fasthttp.StatusUnauthorized)
 		return
@@ -99,7 +99,7 @@ func (h *ApplicationHandler) GetByID(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	applicationId, err := strconv.ParseInt(application_id_str, 10, 64)
+	applicationId, err := strconv.Atoi(application_id_str)
 	if err != nil {
 		log.Println(err)
 		ctx.SetStatusCode(fasthttp.StatusBadGateway)
@@ -123,7 +123,7 @@ func (h *ApplicationHandler) DeleteById(ctx *fasthttp.RequestCtx) {
 	proxy_path := string(ctx.Path())
 	application_id_str := strings.ReplaceAll(proxy_path, "/api/v1/applications/", "")
 
-	applicationId, err := strconv.ParseInt(application_id_str, 10, 64)
+	applicationId, err := strconv.Atoi(application_id_str)
 	if err != nil {
 		log.Println(err)
 		ctx.SetStatusCode(fasthttp.StatusBadGateway)

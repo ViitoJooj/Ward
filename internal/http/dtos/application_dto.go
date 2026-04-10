@@ -5,7 +5,7 @@ import "time"
 // Utils
 
 type ApplicationData struct {
-	ID         int64     `json:"id"`
+	ID         int       `json:"id"`
 	Url        string    `json:"url"`
 	Country    string    `json:"country"`
 	Created_by UserData  `json:"created_by"`
