@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ViitoJooj/door/internal/domain"
 	"github.com/ViitoJooj/door/internal/http/dtos"
@@ -98,41 +99,47 @@ func (c *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 	}
 
 	res, _ := json.Marshal(output)
-
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.SetContentType("application/json")
 	ctx.SetBody(res)
 }
 
 func (c *AuthHandler) Token(ctx *fasthttp.RequestCtx) {
-	tokenString := string(ctx.Request.Header.Cookie("token"))
+	authHeader := string(ctx.Request.Header.Peek("Authorization"))
 
-	if tokenString == "" {
+	if authHeader == "" {
 		ctx.SetStatusCode(fasthttp.StatusUnauthorized)
-		ctx.SetContentType("application/json")
-		ctx.SetBody([]byte(`{"error":"Token not found"}`))
+		ctx.SetBodyString(`{"error":"Authorization header not found"}`)
 		return
 	}
+
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		ctx.SetStatusCode(fasthttp.StatusUnauthorized)
+		ctx.SetBodyString(`{"error":"Invalid Authorization format"}`)
+		return
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 	_, err := c.authService.Token(tokenString)
 	if err != nil {
-		res, _ := json.Marshal(map[string]string{
-			"error": err.Error(),
-		})
 		ctx.SetStatusCode(fasthttp.StatusUnauthorized)
-		ctx.SetContentType("application/json")
-		ctx.SetBody(res)
+		ctx.SetBodyString(`{"error":"Invalid token"}`)
 		return
 	}
 
-	res, _ := json.Marshal(map[string]any{
-		"success": true,
-		"message": "Token is valid",
-	})
+	var cookie fasthttp.Cookie
+	cookie.SetKey("token")
+	cookie.SetValue(tokenString)
+	cookie.SetHTTPOnly(true)
+	cookie.SetPath("/")
+	cookie.SetSecure(false)
+
+	ctx.Response.Header.SetCookie(&cookie)
 
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.SetContentType("application/json")
-	ctx.SetBody(res)
+	ctx.SetBodyString(`{"success":true}`)
 }
 
 func (c *AuthHandler) Logout(ctx *fasthttp.RequestCtx) {
