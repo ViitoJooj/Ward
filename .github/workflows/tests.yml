@@ -27,6 +27,7 @@ jobs:
           echo "MAX_ATTEMPTS=50" >> .env
           echo "TIMEOUT=5" >> .env
           echo "ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000" >> .env
+          echo "DB_PATH=./database.db" >> .env
 
       - name: Debug .env
         run: cat .env
@@ -49,6 +50,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Check sqlite file
+        run: |
+          find . -maxdepth 3 -type f -name "*.db"
+          ls -la
 
       - name: Run Python
         working-directory: tests/
