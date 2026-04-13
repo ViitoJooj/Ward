@@ -34,8 +34,10 @@ jobs:
       - name: Dependency download
         run: go mod tidy
 
-      - name: Run core
-        run: go run cmd/api/main.go
+      - name: Run core (background)
+        run: |
+          nohup go run cmd/api/main.go > core.log 2>&1 &
+          echo $! > core.pid
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -50,3 +52,8 @@ jobs:
       - name: Run Python
         run: |
           python main.py
+      
+      - name: Stop core
+        if: always()
+        run: |
+          kill $(cat core.pid) || true
