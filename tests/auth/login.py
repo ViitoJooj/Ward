@@ -5,7 +5,7 @@ import sqlite3
 import requests
 import pytest
 import bcrypt
-from datetime import datetime
+from datetime import datetime, UTC
 from dotenv import load_dotenv
 
 
@@ -40,7 +40,7 @@ def insert_test_user():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
     cur.execute("""
         INSERT INTO users (username, email, password, updated_at, created_at)
