@@ -27,3 +27,6 @@ tmp/
 # Sqlite
 *.db
 */*.db
+
+# MacOS
+.DS_Store
