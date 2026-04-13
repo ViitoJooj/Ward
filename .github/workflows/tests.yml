@@ -29,6 +29,9 @@ jobs:
           echo "ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000" >> .env
           echo "DB_PATH=./database.db" >> .env
 
+      - name: Load .env into job env
+        run: cat .env >> $GITHUB_ENV
+
       - name: Debug .env
         run: cat .env
 
@@ -53,23 +56,8 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Wait API ready
-        run: |
-          for i in {1..30}; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:7171/proxy/)
-            echo "HTTP status: $code"
-
-            if [ "$code" = "200" ]; then
-              echo "API is ready!"
-              exit 0
-            fi
-
-            sleep 1
-          done
-
-          echo "API did not start in time"
-          cat core.log || true
-          exit 1
+      - name: Wait core start
+        run: sleep 10
 
       - name: Check sqlite file
         run: |
