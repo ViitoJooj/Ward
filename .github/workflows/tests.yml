@@ -1,7 +1,7 @@
 name: test core with python
 
 on:
-  push: 
+  push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
@@ -9,7 +9,7 @@ on:
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -21,13 +21,14 @@ jobs:
 
       - name: Gen random dotenv
         run: |
+          rm -f .env
           echo "JWT_ACCESS_TOKEN_SECRET=$(openssl rand -hex 32)" >> .env
           echo "JWT_REFRESH_TOKEN_SECRET=$(openssl rand -hex 64)" >> .env
           echo "BASE_URL=http://localhost:7171" >> .env
           echo "MAX_ATTEMPTS=50" >> .env
           echo "TIMEOUT=5" >> .env
           echo "ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000" >> .env
-          echo "DB_PATH=../database.db" >> .env
+          echo "DB_PATH=${{ github.workspace }}/database.db" >> .env
 
       - name: Load .env into job env
         run: cat .env >> $GITHUB_ENV
@@ -40,35 +41,57 @@ jobs:
 
       - name: Run core (background)
         run: |
-          nohup go run cmd/api/main.go > core.log 2>&1 &
+          go run cmd/api/main.go > core.log 2>&1 &
           echo $! > core.pid
-          sleep 1
+
+      - name: Wait API ready
+        run: |
+          for i in {1..60}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:7171/proxy/ || true)
+            echo "HTTP status: $code"
+
+            if [ "$code" = "200" ]; then
+              echo "API is ready!"
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          echo "API did not start in time"
           cat core.log || true
+          exit 1
+
+      - name: Check database file
+        run: |
+          echo "DB_PATH=$DB_PATH"
+          ls -la "${{ github.workspace }}"
+          if [ ! -f "${{ github.workspace }}/database.db" ]; then
+            echo "database.db not found!"
+            cat core.log || true
+            exit 1
+          fi
+          echo "database.db exists"
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.14.3"
-      
-      - name: Install Dependency
-        working-directory: tests/
+
+      - name: Install Python dependencies
+        working-directory: tests
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
 
-      - name: Wait core start
-        run: sleep 10
+      - name: Run Python tests
+        working-directory: tests
+        run: python main.py
 
-      - name: Check sqlite file
-        run: |
-          find . -maxdepth 3 -type f -name "*.db"
-          ls -la
+      - name: Show core logs
+        if: always()
+        run: cat core.log || true
 
-      - name: Run Python
-        working-directory: tests/
-        run: |
-          python main.py
-      
       - name: Stop core
         if: always()
         run: |
