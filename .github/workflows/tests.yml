@@ -27,7 +27,7 @@ jobs:
           echo "MAX_ATTEMPTS=50" >> .env
           echo "TIMEOUT=5" >> .env
           echo "ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000" >> .env
-          echo "DB_PATH=./database.db" >> .env
+          echo "DB_PATH=../database.db" >> .env
 
       - name: Load .env into job env
         run: cat .env >> $GITHUB_ENV
