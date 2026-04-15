@@ -47,10 +47,10 @@ func (h *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 
 	createdUser, err := h.authService.Register(user)
 	if err != nil {
-		log.Println("internal error.")
+		log.Println(err)
 		output := dto_utils.Error{
 			Success: false,
-			Message: "internal error.",
+			Message: err.Error(),
 		}
 		res, _ := json.Marshal(output)
 		ctx.SetStatusCode(fasthttp.StatusBadRequest)
@@ -99,10 +99,10 @@ func (c *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 		log.Println(err)
 		output := dto_utils.Error{
 			Success: false,
-			Message: "internal error.",
+			Message: err.Error(),
 		}
 		res, _ := json.Marshal(output)
-		ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		ctx.SetStatusCode(fasthttp.StatusUnauthorized)
 		ctx.SetContentType("application/json")
 		ctx.SetBody(res)
 		return

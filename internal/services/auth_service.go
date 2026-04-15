@@ -1,7 +1,6 @@
 package services
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -27,7 +26,7 @@ func NewAuthService(userRepo repository.UserRepository, log *logger.Logger) *Aut
 
 func (s *AuthService) Register(user *domain.User) (*domain.User, error) {
 	existing, err := s.userRepo.FindUserByEmail(user.Email)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
 		s.logger.Error("failed to find user by email / error: " + err.Error())
 		return nil, errors.New("internal error")
 	}
@@ -91,7 +90,7 @@ func (s *AuthService) Login(username string, email string, password string, ip s
 			return nil, "", errors.New("internal error")
 		}
 		if user == nil {
-			s.logger.Warn("login attempt with unknown email  email: " + email)
+			s.logger.Warn("login attempt with unknown email / email: " + email)
 			return nil, "", errors.New("invalid credentials")
 		}
 

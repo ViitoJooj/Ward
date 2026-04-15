@@ -1,18 +1,20 @@
 package repository
 
 import (
-	"database/sql"
+	"sync"
 
 	"github.com/ViitoJooj/door/internal/domain"
+	"github.com/cockroachdb/pebble"
 )
 
-type SQLite struct {
-	db *sql.DB
+type Store struct {
+	db *pebble.DB
+	mu sync.Mutex
 }
 
-func NewSQLiteRepository(db *sql.DB) (UserRepository, ApplicationRepository, RequestLogRepository) {
-	repo := &SQLite{db: db}
-	return repo, repo, repo
+func NewRocksDBRepository(db *pebble.DB) (UserRepository, ApplicationRepository, RequestLogRepository) {
+	s := &Store{db: db}
+	return s, s, s
 }
 
 type UserRepository interface {

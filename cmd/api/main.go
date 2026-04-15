@@ -21,7 +21,7 @@ func main() {
 
 	router := router.New()
 	log := logger.NewLogger(os.Stdout)
-	authRepo, applicationRepo, logRepo := repository.NewSQLiteRepository(database.DB)
+	authRepo, applicationRepo, logRepo := repository.NewRocksDBRepository(database.DB)
 
 	//Auth
 	authService := services.NewAuthService(authRepo, log)
@@ -45,10 +45,9 @@ func main() {
 	httpx.RegisterRequestLogRoutes(router, requestLogHandler)
 	httpx.RegisterProxyRoutes(router, proxyHandler)
 
-	//Middelwares
+	//Middlewares
 	handlerWithLog := middlewares.RequestLoggerMiddleware(router.Handler, logRepo)
 	handlerWithCors := middlewares.CorsMiddleware(handlerWithLog)
 
 	fasthttp.ListenAndServe(":7171", handlerWithCors)
-
 }

@@ -1,256 +1,199 @@
 package repository
 
 import (
-	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"sort"
+	"strconv"
 
 	"github.com/ViitoJooj/door/internal/domain"
+	"github.com/cockroachdb/pebble"
 )
 
-func (r *SQLite) ListUsers() ([]*domain.User, error) {
-	rows, err := r.db.Query(`
-		SELECT id, username, email, password, updated_at, created_at
-		FROM users
-	`)
+func upperBound(prefix []byte) []byte {
+	end := make([]byte, len(prefix))
+	copy(end, prefix)
+	for i := len(end) - 1; i >= 0; i-- {
+		end[i]++
+		if end[i] != 0 {
+			return end[:i+1]
+		}
+	}
+	return nil
+}
+
+func (s *Store) getIDByIndex(indexKey string) (int, error) {
+	val, closer, err := s.db.Get([]byte(indexKey))
+	if closer != nil {
+		defer closer.Close()
+	}
+	if errors.Is(err, pebble.ErrNotFound) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return strconv.Atoi(string(val))
+}
+
+func (s *Store) FindUserByID(id int) (*domain.User, error) {
+	val, closer, err := s.db.Get([]byte(fmt.Sprintf("user:id:%010d", id)))
+	if closer != nil {
+		defer closer.Close()
+	}
+	if errors.Is(err, pebble.ErrNotFound) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+
+	user := &domain.User{}
+	if err := json.Unmarshal(val, user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s *Store) FindUserByEmail(email string) (*domain.User, error) {
+	id, err := s.getIDByIndex("user:email:" + email)
+	if err != nil {
+		return nil, err
+	}
+	if id == 0 {
+		return nil, nil
+	}
+	return s.FindUserByID(id)
+}
+
+func (s *Store) FindUserByUsername(username string) (*domain.User, error) {
+	id, err := s.getIDByIndex("user:username:" + username)
+	if err != nil {
+		return nil, err
+	}
+	if id == 0 {
+		return nil, nil
+	}
+	return s.FindUserByID(id)
+}
+
+func (s *Store) ListUsers() ([]*domain.User, error) {
+	prefix := []byte("user:id:")
+	iter, err := s.db.NewIter(&pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: upperBound(prefix),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
 
 	var users []*domain.User
-
-	for rows.Next() {
+	for iter.First(); iter.Valid(); iter.Next() {
 		user := &domain.User{}
-
-		err := rows.Scan(
-			&user.ID,
-			&user.Username,
-			&user.Email,
-			&user.Password,
-			&user.Updated_at,
-			&user.Created_at,
-		)
-		if err != nil {
+		if err := json.Unmarshal(iter.Value(), user); err != nil {
 			return nil, err
 		}
-
 		users = append(users, user)
 	}
 
-	return users, nil
+	return users, iter.Error()
 }
 
-func (r *SQLite) FindUserByUsername(username string) (*domain.User, error) {
-	row := r.db.QueryRow(`
-		SELECT id, username, email, password, updated_at, created_at
-		FROM users
-		WHERE username = ?
-	`, username)
-
-	user := &domain.User{}
-	err := row.Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.Password,
-		&user.Updated_at,
-		&user.Created_at,
-	)
-
+func (s *Store) FindApplicationByID(id int) (*domain.Application, error) {
+	val, closer, err := s.db.Get([]byte(fmt.Sprintf("app:id:%010d", id)))
+	if closer != nil {
+		defer closer.Close()
+	}
+	if errors.Is(err, pebble.ErrNotFound) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
-}
-
-func (r *SQLite) FindUserByEmail(email string) (*domain.User, error) {
-	row := r.db.QueryRow(`
-		SELECT id, username, email, password, updated_at, created_at
-		FROM users
-		WHERE email = ?
-	`, email)
-
-	user := &domain.User{}
-	err := row.Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.Password,
-		&user.Updated_at,
-		&user.Created_at,
-	)
-
-	if err != nil {
+	app := &domain.Application{}
+	if err := json.Unmarshal(val, app); err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return app, nil
 }
 
-func (r *SQLite) FindUserByID(id int) (*domain.User, error) {
-	row := r.db.QueryRow(`
-		SELECT id, username, email, password, updated_at, created_at
-		FROM users
-		WHERE id = ?
-	`, id)
-
-	user := &domain.User{}
-	err := row.Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.Password,
-		&user.Updated_at,
-		&user.Created_at,
-	)
-
+func (s *Store) FindApplicationByURL(url string) (*domain.Application, error) {
+	id, err := s.getIDByIndex("app:url:" + url)
 	if err != nil {
 		return nil, err
 	}
-
-	return user, nil
+	if id == 0 {
+		return nil, nil
+	}
+	return s.FindApplicationByID(id)
 }
 
-func (r *SQLite) ListApplications() ([]*domain.Application, error) {
-	rows, err := r.db.Query(`
-		SELECT id, url, country, created_by, updated_at, created_at
-		FROM applications
-	`)
+func (s *Store) FindApplicationByCountry(country string) (*domain.Application, error) {
+	id, err := s.getIDByIndex("app:country:" + country)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	if id == 0 {
+		return nil, nil
+	}
+	return s.FindApplicationByID(id)
+}
+
+func (s *Store) ListApplications() ([]*domain.Application, error) {
+	prefix := []byte("app:id:")
+	iter, err := s.db.NewIter(&pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: upperBound(prefix),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
 
 	var applications []*domain.Application
-
-	for rows.Next() {
-		application := &domain.Application{}
-
-		err := rows.Scan(
-			&application.ID,
-			&application.Url,
-			&application.Country,
-			&application.Created_by,
-			&application.Updated_at,
-			&application.Created_at,
-		)
-		if err != nil {
+	for iter.First(); iter.Valid(); iter.Next() {
+		app := &domain.Application{}
+		if err := json.Unmarshal(iter.Value(), app); err != nil {
 			return nil, err
 		}
-
-		applications = append(applications, application)
+		applications = append(applications, app)
 	}
 
-	return applications, rows.Err()
+	return applications, iter.Error()
 }
 
-func (r *SQLite) FindApplicationByID(id int) (*domain.Application, error) {
-	application := &domain.Application{}
-
-	err := r.db.QueryRow(`
-		SELECT id, url, country, created_by, updated_at, created_at
-		FROM applications
-		WHERE id = ?
-	`, id).Scan(
-		&application.ID,
-		&application.Url,
-		&application.Country,
-		&application.Created_by,
-		&application.Updated_at,
-		&application.Created_at,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-
-	return application, err
-}
-
-func (r *SQLite) FindApplicationByCountry(country string) (*domain.Application, error) {
-	application := &domain.Application{}
-
-	err := r.db.QueryRow(`
-		SELECT id, url, country, created_by, updated_at, created_at
-		FROM applications
-		WHERE country = ?
-	`, country).Scan(
-		&application.ID,
-		&application.Url,
-		&application.Country,
-		&application.Created_by,
-		&application.Updated_at,
-		&application.Created_at,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-
-	return application, err
-}
-
-func (r *SQLite) ListRequestLogs() ([]*domain.RequestLog, error) {
-	rows, err := r.db.Query(`
-		SELECT id, method, path, query_string, status_code, response_time_ms, ip, country, user_agent, referer, request_size, response_size, internal, created_at
-		FROM request_logs
-		ORDER BY created_at DESC
-	`)
+func (s *Store) ListRequestLogs() ([]*domain.RequestLog, error) {
+	prefix := []byte("log:id:")
+	iter, err := s.db.NewIter(&pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: upperBound(prefix),
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer iter.Close()
 
 	var logs []*domain.RequestLog
-
-	for rows.Next() {
+	for iter.First(); iter.Valid(); iter.Next() {
 		entry := &domain.RequestLog{}
-
-		err := rows.Scan(
-			&entry.ID,
-			&entry.Method,
-			&entry.Path,
-			&entry.QueryString,
-			&entry.StatusCode,
-			&entry.ResponseTimeMs,
-			&entry.IP,
-			&entry.Country,
-			&entry.UserAgent,
-			&entry.Referer,
-			&entry.RequestSize,
-			&entry.ResponseSize,
-			&entry.Internal,
-			&entry.CreatedAt,
-		)
-		if err != nil {
+		if err := json.Unmarshal(iter.Value(), entry); err != nil {
 			return nil, err
 		}
-
 		logs = append(logs, entry)
 	}
 
-	return logs, rows.Err()
-}
-
-func (r *SQLite) FindApplicationByURL(url string) (*domain.Application, error) {
-	application := &domain.Application{}
-
-	err := r.db.QueryRow(`
-		SELECT id, url, country, created_by, updated_at, created_at
-		FROM applications
-		WHERE url = ?
-	`, url).Scan(
-		&application.ID,
-		&application.Url,
-		&application.Country,
-		&application.Created_by,
-		&application.Updated_at,
-		&application.Created_at,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
+	if err := iter.Error(); err != nil {
+		return nil, err
 	}
 
-	return application, err
+	sort.Slice(logs, func(i, j int) bool {
+		return logs[i].CreatedAt.After(logs[j].CreatedAt)
+	})
+
+	return logs, nil
 }
