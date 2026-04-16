@@ -16,7 +16,7 @@ func GenerateRefreshToken(userID int) (string, error) {
 		"type":    "refresh",
 		"iat":     now.Unix(),
 		"nbf":     now.Unix(),
-		"exp":     now.Add(24 * time.Hour).Unix(),
+		"exp":     now.Add(30 * 24 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
