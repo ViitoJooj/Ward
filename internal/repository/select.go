@@ -6,6 +6,40 @@ import (
 	"github.com/ViitoJooj/ward/internal/domain"
 )
 
+func (r *SQLite) FindVar(name string) (*domain.Env, error) {
+	row := r.db.QueryRow(`SELECT id, name, value FROM env WHERE var = $1`, name)
+	env := &domain.Env{}
+	row.Scan(env.Id, env.Name, env.Value)
+	return env, nil
+}
+
+func (r *SQLite) GetAllVars() ([]*domain.Env, error) {
+	rows, err := r.db.Query(`SELECT * FROM env`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var envs []*domain.Env
+
+	for rows.Next() {
+		env := &domain.Env{}
+		err := rows.Scan(
+			&env.Id,
+			&env.Name,
+			&env.Value,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		envs = append(envs, env)
+
+	}
+
+	return envs, nil
+}
+
 func (r *SQLite) ListUsers() ([]*domain.User, error) {
 	rows, err := r.db.Query(`
 		SELECT id, username, email, password, updated_at, created_at

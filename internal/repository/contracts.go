@@ -39,3 +39,9 @@ type RequestLogRepository interface {
 	InsertRequestLog(log *domain.RequestLog) error
 	ListRequestLogs() ([]*domain.RequestLog, error)
 }
+
+type DotEnvRepository interface {
+	FindVar(name string) (string, error)
+	ChangeVar(*domain.Env) error
+	GetAllVars() ([]*domain.Env, error)
+}
