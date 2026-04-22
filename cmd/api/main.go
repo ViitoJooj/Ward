@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	httpx "github.com/ViitoJooj/ward/internal/http"
@@ -18,17 +18,16 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting Ward . . .")
 	dotenv.GetEnv()
 	database.Conn()
 	ip2location.Open()
 
 	router := router.New()
-	log := logger.NewLogger(os.Stdout)
+	logger := logger.NewLogger(os.Stdout)
 	authRepo, applicationRepo, logRepo := repository.NewSQLiteRepository(database.DB)
 
 	//Auth
-	authService := services.NewAuthService(authRepo, log)
+	authService := services.NewAuthService(authRepo, logger)
 	authHandler := handler.NewAuthHandler(authService)
 
 	//Application
@@ -37,7 +36,7 @@ func main() {
 
 	//Proxy
 	proxyService := services.NewProxyService()
-	proxyHandler := handler.NewProxyHandler(proxyService)
+	proxyHandler := handler.NewProxyHandler(proxyService, applicationService)
 
 	//RequestLog
 	requestLogService := services.NewRequestLogService(logRepo)
@@ -53,6 +52,6 @@ func main() {
 	handlerWithLog := middlewares.RequestLoggerMiddleware(router.Handler, logRepo)
 	handlerWithCors := middlewares.CorsMiddleware(handlerWithLog)
 
+	log.Println("Ward running on port: 7171")
 	fasthttp.ListenAndServe(":7171", handlerWithCors)
-
 }
