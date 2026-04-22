@@ -314,29 +314,6 @@ func (r *SQLite) ListRequestLogs() ([]*domain.RequestLog, error) {
 	return logs, rows.Err()
 }
 
-func (r *SQLite) FindApplicationByURL(url string) (*domain.Application, error) {
-	application := &domain.Application{}
-
-	err := r.db.QueryRow(`
-		SELECT id, url, country, created_by, updated_at, created_at
-		FROM applications
-		WHERE url = ?
-	`, url).Scan(
-		&application.ID,
-		&application.Url,
-		&application.Country,
-		&application.Created_by,
-		&application.Updated_at,
-		&application.Created_at,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-
-	return application, err
-}
-
 func (r *SQLite) FindAllCors() ([]*domain.Cors, error) {
 	rows, err := r.db.Query(`SELECT id, origin FROM cors`)
 	if err != nil {

@@ -34,7 +34,7 @@ func (h *ProxyHandler) Proxy(ctx *fasthttp.RequestCtx) {
 	clientIP := ip.GetIP(ctx)
 	country := ip2location.GetCountry(clientIP)
 
-	application, err := s.applicationService.ApplicationRepo.FindApplicationByCountry(country)
+	application, err := h.applicationService.ApplicationRepo.FindApplicationByCountry(country)
 	if err != nil {
 		log.Println(err)
 		output := dto_utils.Error{
@@ -49,7 +49,7 @@ func (h *ProxyHandler) Proxy(ctx *fasthttp.RequestCtx) {
 	}
 
 	if application == nil {
-		application, err = s.applicationService.ApplicationRepo.GetRandomApplication()
+		application, err = h.applicationService.ApplicationRepo.GetRandomApplication()
 		if err != nil {
 			log.Println(err)
 			output := dto_utils.Error{

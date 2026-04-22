@@ -19,8 +19,8 @@ import (
 
 func main() {
 	initproject.Init_project()
-	middlewares.LoadCorsFromDB()
 	database.Conn()
+	middlewares.LoadCorsFromDB()
 	ip2location.Open()
 	router := router.New()
 
