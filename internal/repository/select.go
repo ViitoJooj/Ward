@@ -6,6 +6,40 @@ import (
 	"github.com/ViitoJooj/ward/internal/domain"
 )
 
+func (r *SQLite) FindVar(id int) (*domain.Env, error) {
+	row := r.db.QueryRow(`SELECT id, name, value FROM env WHERE id = $1`, id)
+	env := &domain.Env{}
+	row.Scan(env.Id, env.Name, env.Value)
+	return env, nil
+}
+
+func (r *SQLite) GetAllVars() ([]*domain.Env, error) {
+	rows, err := r.db.Query(`SELECT * FROM env`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var envs []*domain.Env
+
+	for rows.Next() {
+		env := &domain.Env{}
+		err := rows.Scan(
+			&env.Id,
+			&env.Name,
+			&env.Value,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		envs = append(envs, env)
+
+	}
+
+	return envs, nil
+}
+
 func (r *SQLite) ListUsers() ([]*domain.User, error) {
 	rows, err := r.db.Query(`
 		SELECT id, username, email, password, updated_at, created_at
@@ -278,4 +312,60 @@ func (r *SQLite) ListRequestLogs() ([]*domain.RequestLog, error) {
 	}
 
 	return logs, rows.Err()
+}
+
+func (r *SQLite) FindApplicationByURL(url string) (*domain.Application, error) {
+	application := &domain.Application{}
+
+	err := r.db.QueryRow(`
+		SELECT id, url, country, created_by, updated_at, created_at
+		FROM applications
+		WHERE url = ?
+	`, url).Scan(
+		&application.ID,
+		&application.Url,
+		&application.Country,
+		&application.Created_by,
+		&application.Updated_at,
+		&application.Created_at,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	return application, err
+}
+
+func (r *SQLite) FindAllCors() ([]*domain.Cors, error) {
+	rows, err := r.db.Query(`SELECT id, origin FROM cors`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var corsList []*domain.Cors
+
+	for rows.Next() {
+		var cors domain.Cors
+		if err := rows.Scan(&cors.Id, &cors.Origin); err != nil {
+			return nil, err
+		}
+		corsList = append(corsList, &cors)
+	}
+
+	return corsList, nil
+}
+
+func (r *SQLite) FindCorsByID(id int) (*domain.Cors, error) {
+	var cors domain.Cors
+
+	err := r.db.QueryRow(`SELECT id, origin FROM cors WHERE id = ?`, id).
+		Scan(&cors.Id, &cors.Origin)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &cors, nil
 }

@@ -10,9 +10,9 @@ type SQLite struct {
 	db *sql.DB
 }
 
-func NewSQLiteRepository(db *sql.DB) (UserRepository, ApplicationRepository, RequestLogRepository) {
+func NewSQLiteRepository(db *sql.DB) (DotEnvRepository, UserRepository, ApplicationRepository, RequestLogRepository, CorsRepository) {
 	repo := &SQLite{db: db}
-	return repo, repo, repo
+	return repo, repo, repo, repo, repo
 }
 
 type UserRepository interface {
@@ -39,4 +39,18 @@ type ApplicationRepository interface {
 type RequestLogRepository interface {
 	InsertRequestLog(log *domain.RequestLog) error
 	ListRequestLogs() ([]*domain.RequestLog, error)
+}
+
+type DotEnvRepository interface {
+	FindVar(id int) (*domain.Env, error)
+	ChangeVar(*domain.Env) error
+	GetAllVars() ([]*domain.Env, error)
+}
+
+type CorsRepository interface {
+	FindAllCors() ([]*domain.Cors, error)
+	FindCorsByID(id int) (*domain.Cors, error)
+	CreateCors(*domain.Cors) error
+	ChangeCors(*domain.Cors) error
+	DeleteCors(id int) error
 }

@@ -26,7 +26,7 @@ func NewProxyHandler(proxyHandler *services.ProxyService, applicationService *se
 	}
 }
 
-func (s *ProxyHandler) Proxy(ctx *fasthttp.RequestCtx) {
+func (h *ProxyHandler) Proxy(ctx *fasthttp.RequestCtx) {
 	proxy_path := string(ctx.Path())
 	method := string(ctx.Method())
 	body_raw := ctx.PostBody()
