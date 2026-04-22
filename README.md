@@ -1,8 +1,12 @@
+<div align=center>
+  <a href="./Docs/README-PT-BR.md">PT-BR</a>
+</div>
+
 <div align="center">
   <img src="./Docs/image/banner.png" alt="ward - API Gateway" width="900"/>
 
   <h1>ward</h1>
-  <p>A lightweight, high-performance API Gateway written in Go.</p>
+  <p>Modular API Gateway in Go focused on security, reliability, and observability.</p>
 
   ![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)
   ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat&logo=sqlite)
@@ -12,51 +16,54 @@
 
 ---
 
-**ward** sits between your clients and your backend services — handling authentication, routing, and logging so your APIs don't have to.
+## What Ward is
 
-## Features
+Ward is a modular API Gateway written in Go.  
+It sits between clients and backend services to centralize authentication, request controls, and request logging.
 
-- **Brute force protection** — protection for brute force
-- **Request Logging** — every request is captured asynchronously: method, path, IP, response time, status code, and more
-- **CORS Middleware** — configurable per-origin with preflight support
-- **Dashboard** — built-in frontend for managing applications and auth flows
+In multi-service architectures, these concerns often become inconsistent across services. Ward provides a single boundary layer so internal services can stay focused on business logic.
 
+## How it works under the hood
 
-## Tech Stack
+A request follows a predictable pipeline:
+1. **CORS middleware** validates origin and preflight behavior.
+2. **Authentication middleware** validates `access_token` on protected routes.
+3. **Handlers** parse/format HTTP only.
+4. **Services** execute business rules.
+5. **Repositories** perform persistence operations.
+6. **Asynchronous logging** writes request metadata without blocking the response.
 
-| Layer | Technology |
-|---|---|
-| Core | Golang |
-| Data | SQLite3 & Redis |
-| View | Angular |
+This separation keeps boundary concerns, domain logic, and data access isolated and maintainable.
 
-## API Reference
+## Architecture
 
-### Authentication
+- **Handlers**: HTTP interface.
+- **Services**: business orchestration and rules.
+- **Repositories**: data access layer.
+- **DTOs**: input/output API contracts.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/ward/api/v1/auth/register` | Register a new user |
-| `POST` | `/ward/api/v1/auth/login` | Login and receive tokens |
-| `GET` | `/ward/api/v1/auth/token` | Validate / refresh access token |
-| `POST` | `/ward/api/v1/auth/logout` | Logout and clear session |
+## Security posture
 
-### Applications (proxy targets)
+- Passwords are hashed with bcrypt before storage.
+- Access and refresh tokens are signed and validated by token type.
+- Protected endpoints validate identity before business logic runs.
+- Access tokens use short expiration windows.
+- Request metadata is stored for auditing and incident investigation.
 
-All routes below require `Authorization: Bearer <access_token>`.
+## Reliability and performance
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/ward/api/v1/applications` | List all registered applications |
-| `GET` | `/ward/api/v1/applications/:id` | Get a single application |
-| `POST` | `/ward/api/v1/applications` | Register a new application |
-| `DELETE` | `/ward/api/v1/applications/:id` | Remove an application |
+- Built in Go using `fasthttp` for low overhead.
+- Request logging is asynchronous to preserve latency.
+- Layer boundaries reduce side effects between modules.
+- Security controls are centralized at the gateway layer.
 
-## Token Strategy
+## Documentation
 
-- **Access token** — short-lived (15 min), kept in memory on the client
-- **Refresh token** — long-lived (24h), stored in localStorage
-- Protected routes validate the `Authorization: Bearer` header via middleware
+- Portuguese version: [`./Docs/README-PT-BR.md`](./Docs/README-PT-BR.md)
+- OpenAPI/Swagger: [`./Docs/swagger/core-api.yml`](./Docs/swagger/core-api.yml)
+- Contributing guide: [`./CONTRIBUTING.md`](./CONTRIBUTING.md)
+- Security policy: [`./SECURITY.md`](./SECURITY.md)
+- License: [`./LICENSE`](./LICENSE)
 
 ## License
 

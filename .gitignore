@@ -31,3 +31,6 @@ tmp/
 
 # MacOS
 .DS_Store
+
+# AI
+.agents
