@@ -6,6 +6,7 @@ require (
 	github.com/fasthttp/router v1.5.4
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/ip2location/ip2location-go/v9 v9.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.41
 	github.com/valyala/fasthttp v1.70.0
@@ -14,7 +15,6 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.2.1 // indirect
-	github.com/ip2location/ip2location-go/v9 v9.8.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/savsgio/gotils v0.0.0-20240704082632-aef3928b8a38 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
