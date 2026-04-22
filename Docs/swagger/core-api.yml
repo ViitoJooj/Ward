@@ -1,320 +1,721 @@
-openapi: 3.1.0
+openapi: 3.1.1
 info:
-  title: ward - core api
-  version: 0.0.1
-  description: 
-    To use the ward API correctly, you must first register a new user at the /<a href="#/Auth/post_api_v1_auth_register">/ward/api/v1/auth/register</a> endpoint. Once registered, log in via <a href="#/Auth/post_api_v1_auth_login">/ward/api/v1/auth/login</a> to obtain your authentication token, which must be included in the header of every subsequent request as `Authorization Bearer <your-token>`. Additionally, you will need to call the <a href="#/Auth/post_api_v1_auth_token">/ward/api/v1/auth/token</a> endpoint to retrieve the `access_token` that is stored in your cookies.
+  title: Ward Core API
+  version: 1.0.0
+  description: |
+    **EN:** Complete API reference for Ward authentication, applications, logs, and proxy fallback routes.
+    Authentication for protected endpoints is cookie-based (`access_token`), issued during login/register and refreshed by `/ward/api/v1/auth/token`.
 
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    **PT-BR:** Referência completa da API do Ward para autenticação, aplicações, logs e rota de fallback de proxy.
+    A autenticação dos endpoints protegidos é baseada em cookie (`access_token`), emitido no login/cadastro e renovado por `/ward/api/v1/auth/token`.
 
 servers:
   - url: http://localhost:7171
-    description: Core router
+    description: |
+      EN: Local development server.
+      PT-BR: Servidor local de desenvolvimento.
+
+tags:
+  - name: Auth
+    description: |
+      EN: User authentication and session management.
+      PT-BR: Autenticação de usuário e gerenciamento de sessão.
+  - name: Applications
+    description: |
+      EN: Application (proxy target) management.
+      PT-BR: Gerenciamento de aplicações (destinos de proxy).
+  - name: Logs
+    description: |
+      EN: Request log retrieval.
+      PT-BR: Consulta de logs de requisição.
+  - name: Proxy
+    description: |
+      EN: Catch-all fallback route.
+      PT-BR: Rota coringa de fallback.
+
+components:
+  securitySchemes:
+    accessTokenCookie:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: |
+        EN: Access token cookie used by protected routes middleware.
+        PT-BR: Cookie de token de acesso usado pelo middleware de rotas protegidas.
+    refreshTokenCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: |
+        EN: Refresh token cookie used by `/ward/api/v1/auth/token`.
+        PT-BR: Cookie de refresh token usado por `/ward/api/v1/auth/token`.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: internal error.
+
+    UserData:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        updated_at:
+          type: string
+          example: "2026-04-22 15:00:00 +0000 UTC"
+        created_at:
+          type: string
+          example: "2026-04-22 15:00:00 +0000 UTC"
+
+    RegisterInput:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: myStrongPassword123
+
+    LoginInput:
+      type: object
+      required: [password]
+      properties:
+        username:
+          type: string
+          description: |
+            EN: Optional if email is provided.
+            PT-BR: Opcional se email for enviado.
+          example: john_doe
+        email:
+          type: string
+          format: email
+          description: |
+            EN: Optional if username is provided.
+            PT-BR: Opcional se username for enviado.
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: myStrongPassword123
+
+    RegisterOutput:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: User created.
+        data:
+          $ref: '#/components/schemas/UserData'
+
+    LoginOutput:
+      type: object
+      required: [success, message, data, token]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Login successful.
+        data:
+          $ref: '#/components/schemas/UserData'
+        token:
+          type: string
+          description: |
+            EN: Present in payload, but currently returned as empty string; authentication uses cookies.
+            PT-BR: Presente no payload, mas atualmente retornado como string vazia; a autenticação usa cookies.
+          example: ""
+
+    TokenOutput:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    LogoutOutput:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Logout successful
+
+    ApplicationInput:
+      type: object
+      required: [url, country]
+      properties:
+        url:
+          type: string
+          example: https://api.example.com
+        country:
+          type: string
+          example: BR
+
+    ApplicationEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        url:
+          type: string
+          example: https://api.example.com
+        country:
+          type: string
+          example: BR
+        created_by:
+          type: integer
+          description: |
+            EN: User ID in raw entity responses.
+            PT-BR: ID do usuário nas respostas de entidade bruta.
+          example: 1
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-04-22T15:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-22T15:00:00Z"
+
+    ApplicationData:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        url:
+          type: string
+          example: https://api.example.com
+        country:
+          type: string
+          example: BR
+        created_by:
+          $ref: '#/components/schemas/UserData'
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-04-22T15:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-22T15:00:00Z"
+
+    ApplicationOutput:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Application has created with successfull.
+        data:
+          $ref: '#/components/schemas/ApplicationData'
+
+    RequestLogData:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 45
+        method:
+          type: string
+          example: GET
+        path:
+          type: string
+          example: /ward/api/v1/applications
+        query_string:
+          type: string
+          example: page=1
+        status_code:
+          type: integer
+          example: 200
+        response_time_ms:
+          type: integer
+          format: int64
+          example: 12
+        ip:
+          type: string
+          example: 127.0.0.1
+        country:
+          type: string
+          example: BR
+        user_agent:
+          type: string
+          example: Mozilla/5.0
+        referer:
+          type: string
+          example: http://localhost:4200
+        request_size:
+          type: integer
+          example: 120
+        response_size:
+          type: integer
+          example: 420
+        internal:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-22T15:00:00Z"
+
+    RequestLogListOutput:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: ok.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestLogData'
 
 paths:
   /ward/api/v1/auth/register:
     post:
-      tags: 
-        - Auth
-      summary: Register a new user
-      description: creates a new user account and returns the profile details.
+      tags: [Auth]
+      summary: Register user / Registrar usuário
+      description: |
+        **EN:** Creates a new user and immediately sets `access_token` and `refresh_token` cookies.
+        Returns profile data in a success envelope.
+
+        **PT-BR:** Cria um novo usuário e define imediatamente os cookies `access_token` e `refresh_token`.
+        Retorna dados de perfil em um envelope de sucesso.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                email:
-                  type: string
-                password:
-                  type: string
+              $ref: '#/components/schemas/RegisterInput'
       responses:
         '201':
-          description: User successfully created.
+          description: |
+            EN: User created.
+            PT-BR: Usuário criado.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-                data:
-                  username: "string"
-                  email: "string"
-                  updated_at: "string"
-                  created_at: "string"
-        '500':
-          description: internal error.
+                $ref: '#/components/schemas/RegisterOutput'
+        '400':
+          description: |
+            EN: Invalid JSON or internal error surfaced as bad request.
+            PT-BR: JSON inválido ou erro interno retornado como bad request.
           content:
-            application/json: 
+            application/json:
               schema:
-                type: object
-              example:
-                success: false
-                message: "internal error."
-                
+                $ref: '#/components/schemas/ErrorResponse'
+
   /ward/api/v1/auth/login:
     post:
-      tags: 
-        - Auth
-      summary: Login router
-      description: Login for new token
+      tags: [Auth]
+      summary: Login / Entrar
+      description: |
+        **EN:** Authenticates by username+password or email+password, then sets `access_token` and `refresh_token` cookies.
+        Returns authenticated user data.
+
+        **PT-BR:** Autentica por username+password ou email+password, e define os cookies `access_token` e `refresh_token`.
+        Retorna os dados do usuário autenticado.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                email:
-                  type: string
-                password:
-                  type: string
+              $ref: '#/components/schemas/LoginInput'
       responses:
         '200':
-          description: Login successful.
+          description: |
+            EN: Login successful.
+            PT-BR: Login realizado com sucesso.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-                data:
-                  id: "int"
-                  username: "string"
-                  email: "string"
-                  updated_at: "string"
-                  created_at: "string"
-                token: "string"
-        '500':
-          description: internal error.
+                $ref: '#/components/schemas/LoginOutput'
+        '400':
+          description: |
+            EN: Invalid JSON or invalid credentials mapped to bad request.
+            PT-BR: JSON inválido ou credenciais inválidas mapeadas para bad request.
           content:
-            application/json: 
+            application/json:
               schema:
-                type: object
-              example:
-                success: false
-                message: "internal error."
+                $ref: '#/components/schemas/ErrorResponse'
 
   /ward/api/v1/auth/token:
     get:
-      tags: 
-        - Auth
-      summary: Get you access token
-      description: Generate new token for you in your cookies (requires login)
+      tags: [Auth]
+      summary: Refresh access token / Renovar token de acesso
+      description: |
+        **EN:** Uses the `refresh_token` cookie to validate the session and issue a new `access_token` cookie.
+        This endpoint does not require `access_token`.
+
+        **PT-BR:** Usa o cookie `refresh_token` para validar a sessão e emitir um novo cookie `access_token`.
+        Este endpoint não exige `access_token`.
       security:
-        - bearerAuth: []
+        - refreshTokenCookie: []
       responses:
         '200':
-          description: Token generated successfully.
+          description: |
+            EN: Access token refreshed successfully.
+            PT-BR: Token de acesso renovado com sucesso.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-        '500':
-          description: internal error.
+                $ref: '#/components/schemas/TokenOutput'
+        '401':
+          description: |
+            EN: Missing or invalid refresh token.
+            PT-BR: Refresh token ausente ou inválido.
           content:
-            application/json: 
-              example:
-                success: false
-                message: "internal error."
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: |
+            EN: Internal token generation error.
+            PT-BR: Erro interno ao gerar token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /ward/api/v1/auth/logout:
-    get:
-      tags: 
-        - Auth
-      summary: logout for you acount
-      description: (requires login)
-      security:
-        - bearerAuth: []
+    post:
+      tags: [Auth]
+      summary: Logout / Sair
+      description: |
+        **EN:** Clears authentication cookies and ends the current session.
+        **PT-BR:** Limpa os cookies de autenticação e encerra a sessão atual.
       responses:
         '200':
-          description: Logout successful
+          description: |
+            EN: Logout successful.
+            PT-BR: Logout realizado com sucesso.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-        '500':
-          description: internal error.
-          content:
-            application/json: 
-              example:
-                success: false
-                message: "internal error."
+                $ref: '#/components/schemas/LogoutOutput'
 
-  /ward/api/v1/applications/:
-    post:
-      tags: 
-        - Application
-      summary: Create a new application
-      description: here you create you new application
+  /ward/api/v1/applications:
+    get:
+      tags: [Applications]
+      summary: List applications / Listar aplicações
+      description: |
+        **EN:** Returns all applications as raw entities (array), not wrapped in `success/message/data`.
+        Requires `access_token` cookie.
+
+        **PT-BR:** Retorna todas as aplicações como entidades brutas (array), sem envelope `success/message/data`.
+        Requer cookie `access_token`.
       security:
-        - bearerAuth: []
+        - accessTokenCookie: []
+      responses:
+        '200':
+          description: |
+            EN: Applications list.
+            PT-BR: Lista de aplicações.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationEntity'
+        '401':
+          description: |
+            EN: Missing/invalid access token.
+            PT-BR: Token de acesso ausente/inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: |
+            EN: Internal error.
+            PT-BR: Erro interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Applications]
+      summary: Create application / Criar aplicação
+      description: |
+        **EN:** Creates a new application linked to the authenticated user.
+        Requires `access_token` cookie.
+
+        **PT-BR:** Cria uma nova aplicação vinculada ao usuário autenticado.
+        Requer cookie `access_token`.
+      security:
+        - accessTokenCookie: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                url:
-                  type: string
-                country:
-                  type: string
+              $ref: '#/components/schemas/ApplicationInput'
       responses:
-        '200':
-          description: Application has created with successfull.
+        '201':
+          description: |
+            EN: Application created.
+            PT-BR: Aplicação criada.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-                data: 
-                  id: "int"
-                  url: "string"
-                  country: "string"
-                  created_by:
-                    id: "int"
-                    username: "string"
-                    email: "string"
-                    updated_at: "string"
-                    created_at: "string"
-                  updated_at: "string"
-                  created_at: "string"
-        '500':
-          description: internal error.
-          content:
-            application/json: 
-              example:
-                success: false
-                message: "internal error."
-
-    get:
-      tags: 
-        - Application
-      summary: Get all applications
-      description: list all applications
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Applications listed successfully.
+                $ref: '#/components/schemas/ApplicationOutput'
+        '401':
+          description: |
+            EN: Missing/invalid access token.
+            PT-BR: Token de acesso ausente/inválido.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-                data:
-                  - id: "int"
-                    url: "string"
-                    country: "string"
-                    updated_at: "string"
-                    created_at: "string"
-        '500':
-          description: internal error.
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: |
+            EN: Internal error.
+            PT-BR: Erro interno.
           content:
-            application/json: 
-              example:
-                success: false
-                message: "internal error."
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /ward/api/v1/applications/{id}:
     get:
-      tags: 
-        - Application
-      summary: Get application by id
-      description: returns a single application by id
+      tags: [Applications]
+      summary: Get application by ID / Buscar aplicação por ID
+      description: |
+        **EN:** Returns one application as a raw entity (not wrapped).
+        Requires `access_token` cookie.
+
+        **PT-BR:** Retorna uma aplicação como entidade bruta (sem envelope).
+        Requer cookie `access_token`.
       security:
-        - bearerAuth: []
+        - accessTokenCookie: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: string
+            type: integer
+          description: |
+            EN: Application ID.
+            PT-BR: ID da aplicação.
       responses:
         '200':
-          description: Application fetched successfully.
+          description: |
+            EN: Application found.
+            PT-BR: Aplicação encontrada.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-                data:
-                  id: "int"
-                  url: "string"
-                  country: "string"
-                  updated_at: "string"
-                  created_at: "string"
-        '500':
-          description: internal error.
+                $ref: '#/components/schemas/ApplicationEntity'
+        '400':
+          description: |
+            EN: Invalid ID.
+            PT-BR: ID inválido.
           content:
-            application/json: 
-              example:
-                success: false
-                message: "internal error."
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: |
+            EN: Missing/invalid access token.
+            PT-BR: Token de acesso ausente/inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: |
+            EN: Internal error.
+            PT-BR: Erro interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
-      tags:
-        - Application
-      summary: Delete application by id
-      description: deletes a single application by id
+      tags: [Applications]
+      summary: Delete application / Deletar aplicação
+      description: |
+        **EN:** Deletes one application and returns deleted data in a success envelope.
+        Requires `access_token` cookie.
+
+        **PT-BR:** Deleta uma aplicação e retorna os dados removidos em envelope de sucesso.
+        Requer cookie `access_token`.
       security:
-        - bearerAuth: []
+        - accessTokenCookie: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: string
+            type: integer
+          description: |
+            EN: Application ID.
+            PT-BR: ID da aplicação.
       responses:
         '200':
-          description: Application deleted successfully.
+          description: |
+            EN: Application deleted.
+            PT-BR: Aplicação deletada.
           content:
             application/json:
               schema:
-                type: object
-              example:
-                success: true
-                message: "string"
-                data:
-                  id: "int"
-                  url: "string"
-                  country: "string"
-                  created_by:
-                    id: "int"
-                    username: "string"
-                    email: "string"
-                    updated_at: "string"
-                    created_at: "string"
-                  updated_at: "string"
-                  created_at: "string"
-        '500':
-          description: internal error.
+                $ref: '#/components/schemas/ApplicationOutput'
+        '401':
+          description: |
+            EN: Missing/invalid access token.
+            PT-BR: Token de acesso ausente/inválido.
           content:
             application/json:
-              example:
-                success: false
-                message: "internal error."
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: |
+            EN: Invalid ID or internal error.
+            PT-BR: ID inválido ou erro interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ward/api/v1/logs:
+    get:
+      tags: [Logs]
+      summary: List request logs / Listar logs de requisição
+      description: |
+        **EN:** Returns request logs in `success/message/data` format.
+        Requires `access_token` cookie.
+
+        **PT-BR:** Retorna logs de requisição no formato `success/message/data`.
+        Requer cookie `access_token`.
+      security:
+        - accessTokenCookie: []
+      responses:
+        '200':
+          description: |
+            EN: Logs fetched.
+            PT-BR: Logs obtidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestLogListOutput'
+        '401':
+          description: |
+            EN: Missing/invalid access token.
+            PT-BR: Token de acesso ausente/inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: |
+            EN: Internal error.
+            PT-BR: Erro interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{path}:
+    x-internal: true
+    parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+        description: |
+          EN: Catch-all unmatched path.
+          PT-BR: Caminho coringa para rotas não casadas.
+    get:
+      tags: [Proxy]
+      summary: Proxy fallback (GET) / Fallback de proxy (GET)
+      description: |
+        **EN:** Fallback route mapped to `ANY /{path:*}`. Current handler logs request metadata and does not write a structured body.
+
+        **PT-BR:** Rota de fallback mapeada em `ANY /{path:*}`. O handler atual registra metadados da requisição e não escreve corpo estruturado.
+      responses:
+        '200':
+          description: |
+            EN: Request received by fallback handler.
+            PT-BR: Requisição recebida pelo handler de fallback.
+    post:
+      tags: [Proxy]
+      summary: Proxy fallback (POST) / Fallback de proxy (POST)
+      description: |
+        **EN:** Same behavior as GET fallback.
+        **PT-BR:** Mesmo comportamento do fallback GET.
+      responses:
+        '200':
+          description: |
+            EN: Request received by fallback handler.
+            PT-BR: Requisição recebida pelo handler de fallback.
+    put:
+      tags: [Proxy]
+      summary: Proxy fallback (PUT) / Fallback de proxy (PUT)
+      description: |
+        **EN:** Same behavior as GET fallback.
+        **PT-BR:** Mesmo comportamento do fallback GET.
+      responses:
+        '200':
+          description: |
+            EN: Request received by fallback handler.
+            PT-BR: Requisição recebida pelo handler de fallback.
+    patch:
+      tags: [Proxy]
+      summary: Proxy fallback (PATCH) / Fallback de proxy (PATCH)
+      description: |
+        **EN:** Same behavior as GET fallback.
+        **PT-BR:** Mesmo comportamento do fallback GET.
+      responses:
+        '200':
+          description: |
+            EN: Request received by fallback handler.
+            PT-BR: Requisição recebida pelo handler de fallback.
+    delete:
+      tags: [Proxy]
+      summary: Proxy fallback (DELETE) / Fallback de proxy (DELETE)
+      description: |
+        **EN:** Same behavior as GET fallback.
+        **PT-BR:** Mesmo comportamento do fallback GET.
+      responses:
+        '200':
+          description: |
+            EN: Request received by fallback handler.
+            PT-BR: Requisição recebida pelo handler de fallback.
