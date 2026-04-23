@@ -1,7 +1,6 @@
 package services
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -18,6 +17,8 @@ type AuthService struct {
 	logger   *logger.Logger
 }
 
+var ErrRegisterDisabled = errors.New("register disabled")
+
 func NewAuthService(userRepo repository.UserRepository, log *logger.Logger) *AuthService {
 	return &AuthService{
 		userRepo: userRepo,
@@ -26,8 +27,19 @@ func NewAuthService(userRepo repository.UserRepository, log *logger.Logger) *Aut
 }
 
 func (s *AuthService) Register(user *domain.User) (*domain.User, error) {
+	userCount, err := s.userRepo.CountUsers()
+	if err != nil {
+		s.logger.Error("failed to count users / error: " + err.Error())
+		return nil, errors.New("internal error")
+	}
+
+	if userCount > 0 {
+		s.logger.Warn("register attempt after bootstrap")
+		return nil, ErrRegisterDisabled
+	}
+
 	existing, err := s.userRepo.FindUserByEmail(user.Email)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
 		s.logger.Error("failed to find user by email / error: " + err.Error())
 		return nil, errors.New("internal error")
 	}
@@ -36,16 +48,16 @@ func (s *AuthService) Register(user *domain.User) (*domain.User, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	newUser, err := domain.NewUser(user.Username, user.Email, user.Password)
+	newUser, err := domain.NewUser(user.Username, user.Email, user.Password, true, "admin")
 	if err != nil {
 		s.logger.Error("failed to create user domain / error: " + err.Error())
-		return nil, errors.New("internal error")
+		return nil, err
 	}
 
 	hashedPassword, err := cryptography.HashPassword(newUser.Password)
 	if err != nil {
 		s.logger.Error("failed to hash password / error: " + err.Error())
-		return nil, errors.New("internal error")
+		return nil, err
 	}
 
 	newUser.Password = hashedPassword
@@ -75,12 +87,12 @@ func (s *AuthService) Login(username string, email string, password string, ip s
 			return nil, "", "", errors.New("invalid credentials")
 		}
 
-		accessToken, err := jwtTokens.GenerateAccessToken(user.ID)
+		accessToken, err := jwtTokens.GenerateAccessToken(user.ID, user.Role)
 		if err != nil {
 			return nil, "", "", errors.New("internal error")
 		}
 
-		refreshToken, err := jwtTokens.GenerateRefreshToken(user.ID)
+		refreshToken, err := jwtTokens.GenerateRefreshToken(user.ID, user.Role)
 		if err != nil {
 			return nil, "", "", errors.New("internal error")
 		}
@@ -104,12 +116,12 @@ func (s *AuthService) Login(username string, email string, password string, ip s
 			return nil, "", "", errors.New("invalid credentials")
 		}
 
-		accessToken, err := jwtTokens.GenerateAccessToken(user.ID)
+		accessToken, err := jwtTokens.GenerateAccessToken(user.ID, user.Role)
 		if err != nil {
 			return nil, "", "", errors.New("internal error")
 		}
 
-		refreshToken, err := jwtTokens.GenerateRefreshToken(user.ID)
+		refreshToken, err := jwtTokens.GenerateRefreshToken(user.ID, user.Role)
 		if err != nil {
 			return nil, "", "", errors.New("internal error")
 		}

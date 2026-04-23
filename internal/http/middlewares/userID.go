@@ -63,7 +63,21 @@ func UserIdMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 			return
 		}
 
+		role, ok := claims["role"].(string)
+		if !ok || role == "" {
+			output := dto_utils.Error{
+				Success: false,
+				Message: "role not found",
+			}
+			res, _ := json.Marshal(output)
+			ctx.SetStatusCode(fasthttp.StatusUnauthorized)
+			ctx.SetContentType("application/json")
+			ctx.SetBody(res)
+			return
+		}
+
 		ctx.SetUserValue("userId", int(userIdFloat))
+		ctx.SetUserValue("userRole", role)
 		next(ctx)
 	}
 }

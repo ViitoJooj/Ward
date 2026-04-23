@@ -42,7 +42,7 @@ func (r *SQLite) GetAllVars() ([]*domain.Env, error) {
 
 func (r *SQLite) ListUsers() ([]*domain.User, error) {
 	rows, err := r.db.Query(`
-		SELECT id, username, email, password, updated_at, created_at
+		SELECT id, username, email, password, role, active, updated_at, created_at
 		FROM users
 	`)
 	if err != nil {
@@ -60,6 +60,8 @@ func (r *SQLite) ListUsers() ([]*domain.User, error) {
 			&user.Username,
 			&user.Email,
 			&user.Password,
+			&user.Role,
+			&user.Active,
 			&user.Updated_at,
 			&user.Created_at,
 		)
@@ -73,9 +75,18 @@ func (r *SQLite) ListUsers() ([]*domain.User, error) {
 	return users, nil
 }
 
+func (r *SQLite) CountUsers() (int, error) {
+	var total int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
 func (r *SQLite) FindUserByUsername(username string) (*domain.User, error) {
 	row := r.db.QueryRow(`
-		SELECT id, username, email, password, updated_at, created_at
+		SELECT id, username, email, password, role, active, updated_at, created_at
 		FROM users
 		WHERE username = ?
 	`, username)
@@ -86,11 +97,16 @@ func (r *SQLite) FindUserByUsername(username string) (*domain.User, error) {
 		&user.Username,
 		&user.Email,
 		&user.Password,
+		&user.Role,
+		&user.Active,
 		&user.Updated_at,
 		&user.Created_at,
 	)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -99,7 +115,7 @@ func (r *SQLite) FindUserByUsername(username string) (*domain.User, error) {
 
 func (r *SQLite) FindUserByEmail(email string) (*domain.User, error) {
 	row := r.db.QueryRow(`
-		SELECT id, username, email, password, updated_at, created_at
+		SELECT id, username, email, password, role, active, updated_at, created_at
 		FROM users
 		WHERE email = ?
 	`, email)
@@ -110,11 +126,16 @@ func (r *SQLite) FindUserByEmail(email string) (*domain.User, error) {
 		&user.Username,
 		&user.Email,
 		&user.Password,
+		&user.Role,
+		&user.Active,
 		&user.Updated_at,
 		&user.Created_at,
 	)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -123,7 +144,7 @@ func (r *SQLite) FindUserByEmail(email string) (*domain.User, error) {
 
 func (r *SQLite) FindUserByID(id int) (*domain.User, error) {
 	row := r.db.QueryRow(`
-		SELECT id, username, email, password, updated_at, created_at
+		SELECT id, username, email, password, role, active, updated_at, created_at
 		FROM users
 		WHERE id = ?
 	`, id)
@@ -134,11 +155,16 @@ func (r *SQLite) FindUserByID(id int) (*domain.User, error) {
 		&user.Username,
 		&user.Email,
 		&user.Password,
+		&user.Role,
+		&user.Active,
 		&user.Updated_at,
 		&user.Created_at,
 	)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 

@@ -24,11 +24,12 @@ func accessSecret() string {
 	return secret
 }
 
-func GenerateRefreshToken(userID int) (string, error) {
+func GenerateRefreshToken(userID int, role string) (string, error) {
 	now := time.Now()
 
 	claims := jwt.MapClaims{
 		"user_id": userID,
+		"role":    role,
 		"type":    "refresh",
 		"iat":     now.Unix(),
 		"nbf":     now.Unix(),
@@ -64,11 +65,12 @@ func ValidateRefreshToken(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func GenerateAccessToken(userID int) (string, error) {
+func GenerateAccessToken(userID int, role string) (string, error) {
 	now := time.Now()
 
 	claims := jwt.MapClaims{
 		"user_id": userID,
+		"role":    role,
 		"type":    "access",
 		"iat":     now.Unix(),
 		"nbf":     now.Unix(),

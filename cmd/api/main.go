@@ -39,6 +39,10 @@ func main() {
 	authService := services.NewAuthService(authRepo, logger)
 	authHandler := handler.NewAuthHandler(authService)
 
+	//Users
+	userService := services.NewUserService(authRepo, logger)
+	userHandler := handler.NewUserHandler(userService)
+
 	//Application
 	applicationService := services.NewApplicationService(applicationRepo, authRepo)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
@@ -58,6 +62,7 @@ func main() {
 	httpx.RegisterRequestLogRoutes(router, requestLogHandler)
 	httpx.RegisterProxyRoutes(router, proxyHandler)
 	httpx.RegisterCorsOriginsRouters(router, corsHandler)
+	httpx.RegisterUserRouters(router, userHandler)
 
 	//Middelwares
 	handlerWithLog := middlewares.RequestLoggerMiddleware(router.Handler, logRepo)

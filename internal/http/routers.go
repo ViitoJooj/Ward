@@ -4,6 +4,7 @@ import (
 	"github.com/ViitoJooj/ward/internal/http/handler"
 	"github.com/ViitoJooj/ward/internal/http/middlewares"
 	"github.com/fasthttp/router"
+	"github.com/valyala/fasthttp"
 )
 
 func RegisterAuthRoutes(r *router.Router, userController *handler.AuthHandler) {
@@ -40,4 +41,18 @@ func RegisterCorsOriginsRouters(r *router.Router, corsController *handler.CorsHa
 	r.POST("/ward/api/v1/cors/", middlewares.UserIdMiddleware(corsController.Create))
 	r.PUT("/ward/api/v1/cors/", middlewares.UserIdMiddleware(corsController.Update))
 	r.DELETE("/ward/api/v1/cors/{path:*}", middlewares.UserIdMiddleware(corsController.DeleteById))
+}
+
+func RegisterUserRouters(r *router.Router, userController *handler.UserHandler) {
+	adminOnly := func(next fasthttp.RequestHandler) fasthttp.RequestHandler {
+		return middlewares.UserIdMiddleware(middlewares.AdminOnlyMiddleware(next))
+	}
+
+	r.PUT("/ward/api/v1/users/me", middlewares.UserIdMiddleware(userController.UpdateMe))
+
+	r.GET("/ward/api/v1/users", adminOnly(userController.GetAll))
+	r.POST("/ward/api/v1/users", adminOnly(userController.Create))
+	r.GET("/ward/api/v1/users/{path:*}", adminOnly(userController.GetByID))
+	r.PUT("/ward/api/v1/users/{path:*}", adminOnly(userController.UpdateByID))
+	r.DELETE("/ward/api/v1/users/{path:*}", adminOnly(userController.DeleteByID))
 }
