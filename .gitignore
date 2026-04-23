@@ -11,6 +11,11 @@ venv/
 .pytest_cache
 .venv
 
+# Node
+dist
+*/dist
+node_modules
+*/node_modules
 
 # Go
 *.exe
