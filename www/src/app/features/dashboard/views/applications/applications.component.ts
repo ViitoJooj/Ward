@@ -1,8 +1,28 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ApplicationService } from '../../../../core/services/application.service';
 import { Application } from '../../dashboard.models';
+
+export const COUNTRIES = [
+  { code: 'AR', name: 'Argentina' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'CN', name: 'China' },
+  { code: 'FR', name: 'France' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'IN', name: 'India' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'RU', name: 'Russia' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+];
 
 @Component({
   selector: 'app-applications',
@@ -20,11 +40,21 @@ export class ApplicationsComponent implements OnInit {
   createError = signal<string | null>(null);
   deletingId = signal<number | null>(null);
 
+  countrySearchTerm = signal('');
+  isCountryDropdownOpen = signal(false);
+
+  filteredCountries = computed(() => {
+    const term = this.countrySearchTerm().toLowerCase().trim();
+    if (!term) return COUNTRIES;
+    return COUNTRIES.filter(c => c.name.toLowerCase().includes(term) || c.code.toLowerCase().includes(term));
+  });
+
   createForm: FormGroup;
 
   constructor(
     private fb: FormBuilder,
-    private applicationService: ApplicationService
+    private applicationService: ApplicationService,
+    private eRef: ElementRef
   ) {
     this.createForm = this.fb.group({
       url: ['', Validators.required],
@@ -55,7 +85,35 @@ export class ApplicationsComponent implements OnInit {
   toggleCreateForm(): void {
     this.showCreateForm.update(v => !v);
     this.createError.set(null);
-    this.createForm.reset();
+    this.createForm.reset({ url: '', country: '' });
+    this.countrySearchTerm.set('');
+    this.isCountryDropdownOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickout(event: Event) {
+    if (!this.eRef.nativeElement.contains(event.target)) {
+      this.isCountryDropdownOpen.set(false);
+    }
+  }
+
+  onCountrySearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.countrySearchTerm.set(input.value);
+    this.isCountryDropdownOpen.set(true);
+  }
+
+  selectCountry(code: string, name: string): void {
+    this.createForm.patchValue({ country: code });
+    this.countrySearchTerm.set(`${name} (${code})`);
+    this.isCountryDropdownOpen.set(false);
+  }
+
+  openCountryDropdown(): void {
+    this.isCountryDropdownOpen.set(true);
+    if (!this.createForm.get('country')?.value) {
+      this.countrySearchTerm.set('');
+    }
   }
 
   onCreate(): void {

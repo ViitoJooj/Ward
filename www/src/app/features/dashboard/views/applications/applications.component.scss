@@ -218,3 +218,60 @@
   font-size: 12px;
   color: #303036;
 }
+
+.country-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  .field__input {
+    width: 100%;
+  }
+}
+
+.dropdown-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #111114;
+  border: 0.5px solid #1e1e22;
+  border-radius: 4px;
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: #1e1e22;
+  }
+
+  &__code {
+    font-size: 11px;
+    color: #505058;
+  }
+
+  &--empty {
+    color: #505058;
+    cursor: default;
+    justify-content: center;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
