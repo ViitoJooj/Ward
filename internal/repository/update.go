@@ -5,12 +5,14 @@ import "github.com/ViitoJooj/ward/internal/domain"
 func (r *SQLite) UpdateUser(user *domain.User) error {
 	_, err := r.db.Exec(`
 		UPDATE users
-		SET username = ?, email = ?, password = ?, updated_at = ?
+		SET username = ?, email = ?, password = ?, role = ?, active = ?, updated_at = ?
 		WHERE id = ?
 	`,
 		user.Username,
 		user.Email,
 		user.Password,
+		user.Role,
+		user.Active,
 		user.Updated_at,
 		user.ID,
 	)

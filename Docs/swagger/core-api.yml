@@ -75,12 +75,124 @@ components:
           type: string
           format: email
           example: john@example.com
+        role:
+          type: string
+          enum: [admin, user]
+          example: user
+        active:
+          type: boolean
+          example: true
         updated_at:
           type: string
           example: "2026-04-22 15:00:00 +0000 UTC"
         created_at:
           type: string
           example: "2026-04-22 15:00:00 +0000 UTC"
+
+    AdminCreateUserInput:
+      type: object
+      required: [username, email]
+      properties:
+        username:
+          type: string
+          example: new_user
+        email:
+          type: string
+          format: email
+          example: new_user@example.com
+        role:
+          type: string
+          enum: [admin, user]
+          default: user
+        active:
+          type: boolean
+          default: true
+
+    AdminUpdateUserInput:
+      type: object
+      required: [username, email, password, role, active]
+      properties:
+        username:
+          type: string
+          example: new_user
+        email:
+          type: string
+          format: email
+          example: new_user@example.com
+        password:
+          type: string
+          format: password
+          example: NewPassword123!
+        role:
+          type: string
+          enum: [admin, user]
+          example: user
+        active:
+          type: boolean
+          example: true
+
+    SelfUpdateUserInput:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: NewPassword123!
+
+    UserOutput:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: user updated.
+        data:
+          $ref: '#/components/schemas/UserData'
+
+    UserListOutput:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: users fetched.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserData'
+
+    AdminCreateUserOutput:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: user created.
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/UserData'
+            temporary_password:
+              type: string
+              example: 9gH!s2P@q1Xz
 
     RegisterInput:
       type: object
@@ -314,10 +426,12 @@ paths:
       tags: [Auth]
       summary: Register user / Registrar usuário
       description: |
-        **EN:** Creates a new user and immediately sets `access_token` and `refresh_token` cookies.
+        **EN:** Bootstrap registration endpoint. It creates the very first user as `admin` and sets `access_token` and `refresh_token` cookies.
+        After the first user exists, this route returns `403` and new users must be created by admins via `/ward/api/v1/users`.
         Returns profile data in a success envelope.
 
-        **PT-BR:** Cria um novo usuário e define imediatamente os cookies `access_token` e `refresh_token`.
+        **PT-BR:** Endpoint de cadastro inicial (bootstrap). Cria o primeiro usuário como `admin` e define os cookies `access_token` e `refresh_token`.
+        Depois que existir um usuário, esta rota passa a retornar `403` e novos usuários devem ser criados por admins em `/ward/api/v1/users`.
         Retorna dados de perfil em um envelope de sucesso.
       requestBody:
         required: true
@@ -338,6 +452,14 @@ paths:
           description: |
             EN: Invalid JSON or internal error surfaced as bad request.
             PT-BR: JSON inválido ou erro interno retornado como bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: |
+            EN: Registration disabled after bootstrap.
+            PT-BR: Cadastro desabilitado após o bootstrap.
           content:
             application/json:
               schema:
@@ -647,6 +769,228 @@ paths:
           description: |
             EN: Internal error.
             PT-BR: Erro interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ward/api/v1/users:
+    get:
+      tags: [Auth]
+      summary: List users (admin) / Listar usuários (admin)
+      description: |
+        **EN:** Returns all users. Requires `access_token` with `role=admin`.
+        **PT-BR:** Retorna todos os usuários. Requer `access_token` com `role=admin`.
+      security:
+        - accessTokenCookie: []
+      responses:
+        '200':
+          description: Users list / Lista de usuários
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListOutput'
+        '401':
+          description: Missing/invalid token / Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (admin only) / Proibido (somente admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Auth]
+      summary: Create user (admin) / Criar usuário (admin)
+      description: |
+        **EN:** Creates a user with a generated temporary password. Requires `access_token` with `role=admin`.
+        **PT-BR:** Cria um usuário com senha provisória gerada automaticamente. Requer `access_token` com `role=admin`.
+      security:
+        - accessTokenCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCreateUserInput'
+      responses:
+        '201':
+          description: User created / Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCreateUserOutput'
+        '400':
+          description: Validation error / Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing/invalid token / Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (admin only) / Proibido (somente admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ward/api/v1/users/me:
+    put:
+      tags: [Auth]
+      summary: Update own user / Atualizar próprio usuário
+      description: |
+        **EN:** Allows authenticated user to update own username, email and password.
+        **PT-BR:** Permite que o usuário autenticado atualize seu próprio username, email e senha.
+      security:
+        - accessTokenCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelfUpdateUserInput'
+      responses:
+        '200':
+          description: User updated / Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOutput'
+        '400':
+          description: Validation error / Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing/invalid token / Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ward/api/v1/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Auth]
+      summary: Get user by ID (admin) / Buscar usuário por ID (admin)
+      description: |
+        **EN:** Returns one user. Requires `access_token` with `role=admin`.
+        **PT-BR:** Retorna um usuário. Requer `access_token` com `role=admin`.
+      security:
+        - accessTokenCookie: []
+      responses:
+        '200':
+          description: User fetched / Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOutput'
+        '401':
+          description: Missing/invalid token / Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (admin only) / Proibido (somente admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found / Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Auth]
+      summary: Update user by ID (admin) / Atualizar usuário por ID (admin)
+      description: |
+        **EN:** Updates one user, including password. Requires `access_token` with `role=admin`.
+        **PT-BR:** Atualiza um usuário, incluindo senha. Requer `access_token` com `role=admin`.
+      security:
+        - accessTokenCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdateUserInput'
+      responses:
+        '200':
+          description: User updated / Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOutput'
+        '400':
+          description: Validation error / Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing/invalid token / Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (admin only) / Proibido (somente admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found / Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Auth]
+      summary: Delete user by ID (admin) / Deletar usuário por ID (admin)
+      description: |
+        **EN:** Deletes one user. Requires `access_token` with `role=admin`.
+        **PT-BR:** Deleta um usuário. Requer `access_token` com `role=admin`.
+      security:
+        - accessTokenCookie: []
+      responses:
+        '200':
+          description: User deleted / Usuário deletado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutOutput'
+        '401':
+          description: Missing/invalid token / Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (admin only) / Proibido (somente admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found / Usuário não encontrado
           content:
             application/json:
               schema:

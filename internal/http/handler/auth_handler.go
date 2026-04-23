@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 
 	"github.com/ViitoJooj/ward/internal/domain"
@@ -43,10 +44,24 @@ func (h *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 		Username: input.Username,
 		Email:    input.Email,
 		Password: input.Password,
+		Role:     "user",
+		Active:   true,
 	}
 
 	createdUser, err := h.authService.Register(user)
 	if err != nil {
+		if errors.Is(err, services.ErrRegisterDisabled) {
+			output := dto_utils.Error{
+				Success: false,
+				Message: "registration is disabled. ask an admin to create your account.",
+			}
+			res, _ := json.Marshal(output)
+			ctx.SetStatusCode(fasthttp.StatusForbidden)
+			ctx.SetContentType("application/json")
+			ctx.SetBody(res)
+			return
+		}
+
 		log.Println("internal error.")
 		output := dto_utils.Error{
 			Success: false,
@@ -65,6 +80,8 @@ func (h *AuthHandler) Register(ctx *fasthttp.RequestCtx) {
 		Data: dto_utils.UserData{
 			Username:   createdUser.Username,
 			Email:      createdUser.Email,
+			Role:       createdUser.Role,
+			Active:     createdUser.Active,
 			Updated_at: createdUser.Updated_at.String(),
 			Created_at: createdUser.Created_at.String(),
 		},
@@ -146,6 +163,8 @@ func (h *AuthHandler) Login(ctx *fasthttp.RequestCtx) {
 			ID:         user.ID,
 			Username:   user.Username,
 			Email:      user.Email,
+			Role:       user.Role,
+			Active:     user.Active,
 			Updated_at: user.Updated_at.String(),
 			Created_at: user.Created_at.String(),
 		},
@@ -201,7 +220,7 @@ func (h *AuthHandler) Token(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	newAccessToken, err := jwtTokens.GenerateAccessToken(user.ID)
+	newAccessToken, err := jwtTokens.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {
 		output := dto_utils.Error{
 			Success: false,

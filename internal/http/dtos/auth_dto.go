@@ -6,6 +6,8 @@ import dto_utils "github.com/ViitoJooj/ward/internal/http/dtos/utils"
 type RegisterInput struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
+	Active   bool   `json:"active"`
 	Password string `json:"password"`
 }
 

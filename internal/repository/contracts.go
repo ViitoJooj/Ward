@@ -17,6 +17,7 @@ func NewSQLiteRepository(db *sql.DB) (DotEnvRepository, UserRepository, Applicat
 
 type UserRepository interface {
 	CreateUser(user *domain.User) error
+	CountUsers() (int, error)
 	FindUserByID(id int) (*domain.User, error)
 	FindUserByEmail(email string) (*domain.User, error)
 	FindUserByUsername(username string) (*domain.User, error)

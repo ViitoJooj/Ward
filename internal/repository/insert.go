@@ -3,10 +3,12 @@ package repository
 import "github.com/ViitoJooj/ward/internal/domain"
 
 func (r *SQLite) CreateUser(user *domain.User) error {
-	_, err := r.db.Exec(`INSERT INTO users (username, email, password, updated_at, created_at) VALUES (?, ?, ?, ?, ?)`,
+	_, err := r.db.Exec(`INSERT INTO users (username, email, password, role, active, updated_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		user.Username,
 		user.Email,
 		user.Password,
+		user.Role,
+		user.Active,
 		user.Updated_at,
 		user.Created_at,
 	)
