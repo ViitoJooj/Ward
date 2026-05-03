@@ -1,13 +1,22 @@
 <div class="view">
   <div class="view__header">
-    <div>
-      <h2 class="view__title">Health</h2>
-      <p class="view__subtitle">Gateway health derived from request logs.</p>
+    <div class="view__header-left">
+      <img class="view__logo" src="logo.png" alt="ward" />
+      <div>
+        <h2 class="view__title">Health</h2>
+        <p class="view__subtitle">Gateway metrics derived from request logs.</p>
+      </div>
     </div>
-    <div class="window-selector">
-      <button class="window-btn" [class.window-btn--active]="windowMinutes() === 5" (click)="setWindow(5)" type="button">5m</button>
-      <button class="window-btn" [class.window-btn--active]="windowMinutes() === 15" (click)="setWindow(15)" type="button">15m</button>
-      <button class="window-btn" [class.window-btn--active]="windowMinutes() === 60" (click)="setWindow(60)" type="button">60m</button>
+    <div class="header-controls">
+      @if (!loading()) {
+        <button class="refresh-btn" (click)="reload()" type="button">↻ {{ countdown() }}s</button>
+      }
+      <div class="window-selector">
+        <button class="window-btn" [class.window-btn--active]="windowMinutes() === 5" (click)="setWindow(5)" type="button">5m</button>
+        <button class="window-btn" [class.window-btn--active]="windowMinutes() === 15" (click)="setWindow(15)" type="button">15m</button>
+        <button class="window-btn" [class.window-btn--active]="windowMinutes() === 60" (click)="setWindow(60)" type="button">1h</button>
+        <button class="window-btn" [class.window-btn--active]="windowMinutes() === 1440" (click)="setWindow(1440)" type="button">24h</button>
+      </div>
     </div>
   </div>
 
@@ -16,83 +25,216 @@
   }
 
   @if (loading()) {
-    <p class="state-message">Loading...</p>
+    <p class="state-message">Loading health metrics...</p>
   } @else if (overview()) {
-    <div class="summary-row">
-      <div class="summary-card">
-        <p class="summary-card__label">Overall status</p>
-        <p class="summary-card__value">
-          <span [class]="statusClass(overview()!.status)">
-            {{ overview()!.status }}
-          </span>
-        </p>
+
+    <div [class]="'status-banner status-banner--' + overview()!.status">
+      <span class="status-dot"></span>
+      <span class="status-banner__text">{{ overview()!.status }}</span>
+      <span class="status-banner__sep">·</span>
+      <span class="status-banner__meta">{{ overview()!.window_minutes }}m window</span>
+      <span class="status-banner__sep">·</span>
+      <span class="status-banner__meta">{{ overview()!.total_requests | number }} requests</span>
+      <span class="status-banner__sep">·</span>
+      <span class="status-banner__meta">{{ overview()!.generated_at | date:'HH:mm:ss' }}</span>
+    </div>
+
+    <div class="panels-grid">
+      <div class="panel">
+        <div class="panel__header">
+          <span class="panel__label">Availability</span>
+          <span [class]="'panel__value panel__value--' + availabilityColor(overview()!.availability)">{{ metricPercent(overview()!.availability) }}</span>
+        </div>
+        <div class="bar-track"><div [class]="'bar-fill bar-fill--' + availabilityColor(overview()!.availability)" [style.width.%]="availabilityBar()"></div></div>
+        <div class="panel__thresholds">
+          <span class="threshold-label">warn &lt;98%</span>
+          <span class="threshold-label threshold-label--crit">crit &lt;95%</span>
+        </div>
       </div>
-      <div class="summary-card">
-        <p class="summary-card__label">Requests</p>
-        <p class="summary-card__value">{{ overview()!.total_requests }}</p>
+
+      <div class="panel">
+        <div class="panel__header">
+          <span class="panel__label">5xx Error rate</span>
+          <span [class]="'panel__value panel__value--' + errorRateColor(overview()!.server_error_rate)">{{ metricPercent(overview()!.server_error_rate) }}</span>
+        </div>
+        <div class="bar-track"><div [class]="'bar-fill bar-fill--' + errorRateColor(overview()!.server_error_rate)" [style.width.%]="serverErrorBar()"></div></div>
+        <div class="panel__thresholds">
+          <span class="threshold-label">warn ≥3%</span>
+          <span class="threshold-label threshold-label--crit">crit ≥10%</span>
+        </div>
       </div>
-      <div class="summary-card">
-        <p class="summary-card__label">Availability</p>
-        <p class="summary-card__value">{{ metricPercent(overview()!.availability) }}</p>
+
+      <div class="panel">
+        <div class="panel__header">
+          <span class="panel__label">4xx Error rate</span>
+          <span class="panel__value panel__value--neutral">{{ metricPercent(overview()!.client_error_rate) }}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bar-fill--neutral" [style.width.%]="clientErrorBar()"></div></div>
+        <div class="panel__thresholds"><span class="threshold-label">{{ overview()!.client_errors }} errors total</span></div>
       </div>
-      <div class="summary-card">
-        <p class="summary-card__label">Server error rate</p>
-        <p class="summary-card__value">{{ metricPercent(overview()!.server_error_rate) }}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-card__label">Avg latency</p>
-        <p class="summary-card__value">{{ metricLatency(overview()!.average_latency_ms) }}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-card__label">P95 latency</p>
-        <p class="summary-card__value">{{ metricLatency(overview()!.p95_latency_ms) }}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-card__label">Req/min</p>
-        <p class="summary-card__value">{{ metricRpm(overview()!.requests_per_minute) }}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-card__label">Unique IPs / Paths</p>
-        <p class="summary-card__value">{{ overview()!.unique_ips }} / {{ overview()!.unique_paths }}</p>
+
+      <div class="panel">
+        <div class="panel__header">
+          <span class="panel__label">Traffic</span>
+          <span class="panel__value panel__value--neutral">{{ metricRpm(overview()!.requests_per_minute) }} rpm</span>
+        </div>
+        <div class="stat-chips">
+          <div class="stat-chip"><span class="stat-chip__label">Total</span><span class="stat-chip__value">{{ overview()!.total_requests | number }}</span></div>
+          <div class="stat-chip"><span class="stat-chip__label">Unique IPs</span><span class="stat-chip__value">{{ overview()!.unique_ips }}</span></div>
+          <div class="stat-chip"><span class="stat-chip__label">Paths</span><span class="stat-chip__value">{{ overview()!.unique_paths }}</span></div>
+        </div>
       </div>
     </div>
 
-    @if (routes().length === 0) {
+    <!-- Charts Row -->
+    <div class="charts-row">
+
+      <!-- Top Routes Bar Chart -->
+      <div class="chart-panel chart-panel--wide">
+        <span class="chart-panel__label">Top routes by traffic</span>
+        @if (topRoutes().length === 0) {
+          <p class="chart-empty">No route data in this window.</p>
+        } @else {
+          <div class="bar-chart">
+            @for (route of topRoutes(); track route.method + route.path) {
+              <div class="bar-chart__row">
+                <div class="bar-chart__meta">
+                  <span [class]="'bar-chart__method bar-chart__method--' + route.method.toLowerCase()">{{ route.method }}</span>
+                  <span class="bar-chart__path">{{ route.path }}</span>
+                </div>
+                <div class="bar-chart__track">
+                  <div [class]="'bar-chart__fill bar-chart__fill--' + route.status" [style.width.%]="routeBarWidth(route)"></div>
+                </div>
+                <span class="bar-chart__count">{{ route.request_count }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Latency Panel -->
+      <div class="chart-panel">
+        <span class="chart-panel__label">Latency</span>
+        <div class="latency-rows">
+          <div class="latency-row">
+            <span class="latency-row__label">Avg</span>
+            <div class="bar-track bar-track--latency"><div [class]="'bar-fill bar-fill--' + latencyColor(overview()!.average_latency_ms)" [style.width.%]="avgLatencyBar()"></div></div>
+            <span [class]="'latency-row__value latency-value--' + latencyColor(overview()!.average_latency_ms)">{{ metricLatency(overview()!.average_latency_ms) }}</span>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row__label">P95</span>
+            <div class="bar-track bar-track--latency"><div [class]="'bar-fill bar-fill--' + latencyColor(overview()!.p95_latency_ms)" [style.width.%]="p95LatencyBar()"></div></div>
+            <span [class]="'latency-row__value latency-value--' + latencyColor(overview()!.p95_latency_ms)">{{ metricLatency(overview()!.p95_latency_ms) }}</span>
+          </div>
+        </div>
+        <div class="latency-legend">
+          <span class="legend-item legend-item--healthy">healthy &lt;700ms</span>
+          <span class="legend-item legend-item--degraded">degraded &lt;1500ms</span>
+          <span class="legend-item legend-item--unhealthy">unhealthy ≥1500ms</span>
+        </div>
+      </div>
+
+      <!-- Response Distribution Donut -->
+      <div class="chart-panel chart-panel--donut">
+        <span class="chart-panel__label">Response distribution</span>
+        <div class="donut-wrap">
+          <svg class="donut-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="36" fill="none" stroke="#1a1a1a" stroke-width="12"/>
+            @for (seg of donutSegments(); track seg.label) {
+              <circle
+                cx="50" cy="50" r="36"
+                fill="none"
+                [attr.stroke]="seg.color"
+                stroke-width="12"
+                [attr.stroke-dasharray]="seg.dasharray"
+                [attr.stroke-dashoffset]="seg.dashoffset"
+                transform="rotate(-90, 50, 50)"
+              />
+            }
+            <text x="50" y="47" text-anchor="middle" class="donut-num">{{ overview()!.total_requests }}</text>
+            <text x="50" y="58" text-anchor="middle" class="donut-sub">requests</text>
+          </svg>
+          <div class="donut-legend">
+            @for (seg of donutSegments(); track seg.label) {
+              <div class="donut-legend__item">
+                <span class="donut-legend__dot" [style.background]="seg.color"></span>
+                <span class="donut-legend__label">{{ seg.label }}</span>
+                <span class="donut-legend__pct">{{ seg.pct.toFixed(1) }}%</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-search">
+        <span class="filter-search__icon">⌕</span>
+        <input
+          class="filter-search__input"
+          type="text"
+          placeholder="Filter by route or method..."
+          [value]="routeFilter()"
+          (input)="routeFilter.set($any($event.target).value)"
+        />
+        @if (routeFilter()) {
+          <button class="filter-search__clear" (click)="routeFilter.set('')" type="button">×</button>
+        }
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group__label">Status</span>
+        <div class="filter-pills">
+          <button class="filter-pill" [class.active]="statusFilter() === 'all'" (click)="setStatusFilter('all')" type="button">All</button>
+          <button class="filter-pill filter-pill--healthy" [class.active]="statusFilter() === 'healthy'" (click)="setStatusFilter('healthy')" type="button">Healthy</button>
+          <button class="filter-pill filter-pill--degraded" [class.active]="statusFilter() === 'degraded'" (click)="setStatusFilter('degraded')" type="button">Degraded</button>
+          <button class="filter-pill filter-pill--unhealthy" [class.active]="statusFilter() === 'unhealthy'" (click)="setStatusFilter('unhealthy')" type="button">Unhealthy</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group__label">Response</span>
+        <div class="filter-pills">
+          <button class="filter-pill" [class.active]="responseFilter() === 'all'" (click)="setResponseFilter('all')" type="button">All</button>
+          <button class="filter-pill" [class.active]="responseFilter() === '2xx'" (click)="setResponseFilter('2xx')" type="button">2xx</button>
+          <button class="filter-pill filter-pill--degraded" [class.active]="responseFilter() === '4xx'" (click)="setResponseFilter('4xx')" type="button">4xx</button>
+          <button class="filter-pill filter-pill--unhealthy" [class.active]="responseFilter() === '5xx'" (click)="setResponseFilter('5xx')" type="button">5xx</button>
+        </div>
+      </div>
+
+      <span class="filter-count">{{ filteredRoutes().length }} routes</span>
+    </div>
+
+    <!-- Route Table -->
+    @if (filteredRoutes().length === 0) {
       <div class="empty-state">
-        <p class="empty-state__text">No route data found in this window.</p>
-        <p class="empty-state__hint">Try increasing the window or generate traffic.</p>
+        <p class="empty-state__text">No routes match the current filters.</p>
+        <p class="empty-state__hint">Try adjusting filters or the time window.</p>
       </div>
     } @else {
       <div class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Status</th>
-              <th>Method</th>
-              <th>Path</th>
-              <th>Requests</th>
-              <th>Availability</th>
-              <th>5xx rate</th>
-              <th>4xx rate</th>
-              <th>Avg</th>
-              <th>P95</th>
-              <th>RPM</th>
-              <th>Last seen</th>
+              <th>Status</th><th>Method</th><th>Path</th><th>Requests</th>
+              <th>Availability</th><th>5xx</th><th>4xx</th><th>Avg</th><th>P95</th><th>RPM</th><th>Last seen</th>
             </tr>
           </thead>
           <tbody>
-            @for (route of routes(); track route.method + route.path) {
+            @for (route of filteredRoutes(); track route.method + route.path) {
               <tr class="table-row">
                 <td><span [class]="statusClass(route.status)">{{ route.status }}</span></td>
                 <td class="mono">{{ route.method }}</td>
                 <td class="table-row__path">{{ route.path }}</td>
-                <td>{{ route.request_count }}</td>
-                <td>{{ metricPercent(route.availability) }}</td>
-                <td>{{ metricPercent(route.server_error_rate) }}</td>
-                <td>{{ metricPercent(route.client_error_rate) }}</td>
-                <td>{{ metricLatency(route.average_latency_ms) }}</td>
-                <td>{{ metricLatency(route.p95_latency_ms) }}</td>
-                <td>{{ metricRpm(route.requests_per_minute) }}</td>
+                <td class="table-row__num">{{ route.request_count }}</td>
+                <td><span [class]="'rate-value rate-value--' + availabilityColor(route.availability)">{{ metricPercent(route.availability) }}</span></td>
+                <td><span [class]="'rate-value rate-value--' + errorRateColor(route.server_error_rate)">{{ metricPercent(route.server_error_rate) }}</span></td>
+                <td class="table-row__secondary">{{ metricPercent(route.client_error_rate) }}</td>
+                <td><span [class]="'rate-value rate-value--' + latencyColor(route.average_latency_ms)">{{ metricLatency(route.average_latency_ms) }}</span></td>
+                <td><span [class]="'rate-value rate-value--' + latencyColor(route.p95_latency_ms)">{{ metricLatency(route.p95_latency_ms) }}</span></td>
+                <td class="table-row__secondary">{{ metricRpm(route.requests_per_minute) }}</td>
                 <td class="table-row__secondary">{{ route.last_seen_at | date: 'dd/MM HH:mm:ss' }}</td>
               </tr>
             }

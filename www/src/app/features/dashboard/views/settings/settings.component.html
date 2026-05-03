@@ -1,514 +1,545 @@
-<div class="view">
+<div class="settings-view">
 
-  <div class="view__header">
+  <header class="settings-header">
     <div>
-      <h2 class="view__title">Settings</h2>
-      <p class="view__subtitle">Gateway configuration, access rules and user management.</p>
+      <h1 class="settings-header__title">Settings</h1>
+      <p class="settings-header__subtitle">Gateway configuration, access rules and user management.</p>
     </div>
-  </div>
+  </header>
 
-  <div class="settings-tabs">
-    <button
-      class="settings-tab"
-      [class.settings-tab--active]="activeTab() === 'env'"
-      (click)="setTab('env')"
-      type="button"
-    >
+  <nav class="tab-nav">
+    <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'env'" (click)="setTab('env')" type="button">
       Environment
     </button>
-    <button
-      class="settings-tab"
-      [class.settings-tab--active]="activeTab() === 'ipAccess'"
-      (click)="setTab('ipAccess')"
-      type="button"
-    >
+    <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'ipAccess'" (click)="setTab('ipAccess')" type="button">
       IP Access
     </button>
+    <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'cors'" (click)="setTab('cors')" type="button">
+      CORS
+    </button>
     @if (isAdmin) {
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeTab() === 'users'"
-        (click)="setTab('users')"
-        type="button"
-      >
-        Users
-      </button>
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeTab() === 'rateLimit'"
-        (click)="setTab('rateLimit')"
-        type="button"
-      >
-        Rate Limit
-      </button>
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeTab() === 'protocol'"
-        (click)="setTab('protocol')"
-        type="button"
-      >
-        Protocol
-      </button>
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeTab() === 'specialRoutes'"
-        (click)="setTab('specialRoutes')"
-        type="button"
-      >
+      <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'specialRoutes'" (click)="setTab('specialRoutes')" type="button">
         Special Routes
       </button>
+      <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'rateLimit'" (click)="setTab('rateLimit')" type="button">
+        Rate Limit
+      </button>
+      <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'protocol'" (click)="setTab('protocol')" type="button">
+        Protocol
+      </button>
+      <button class="tab-nav__item" [class.tab-nav__item--active]="activeTab() === 'users'" (click)="setTab('users')" type="button">
+        Users
+      </button>
     }
-  </div>
+  </nav>
 
+  <!-- ENV TAB -->
   @if (activeTab() === 'env') {
-    @if (envLoading()) {
-      <p class="state-message">Loading...</p>
-    } @else if (envError()) {
-      <p class="error-message">{{ envError() }}</p>
-    } @else if (envVars().length === 0) {
-      <div class="empty-state">
-        <p class="empty-state__text">No environment variables found.</p>
-        <p class="empty-state__hint">Variables configured in the .env file will appear here.</p>
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Environment Variables</h2>
+          <p class="panel-desc">Stored encrypted values injected into your gateway.</p>
+        </div>
       </div>
-    } @else {
-      <div class="env-list">
-        @for (env of envVars(); track env.Id) {
-          <div class="env-row">
-            <span class="env-row__name">{{ env.Name }}</span>
-            <div class="env-row__right">
+      @if (envLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else if (envError()) {
+        <div class="alert alert--error">{{ envError() }}</div>
+      } @else if (envVars().length === 0) {
+        <div class="empty-state">
+          <span class="empty-state__icon">⚙</span>
+          <p class="empty-state__text">No environment variables found.</p>
+          <p class="empty-state__hint">Variables configured in the .env file will appear here.</p>
+        </div>
+      } @else {
+        <div class="kv-list">
+          @for (env of envVars(); track env.Id) {
+            <div class="kv-row">
+              <code class="kv-row__key">{{ env.Name }}</code>
               @if (editingId() !== env.Id) {
-                <span class="env-row__value">{{ env.Value || '—' }}</span>
-                <button class="btn-ghost" (click)="startEdit(env)" type="button">Edit</button>
+                <span class="kv-row__value">{{ env.Value || '—' }}</span>
+                <div class="kv-row__actions">
+                  <button class="btn btn--ghost btn--xs" (click)="startEdit(env)" type="button">Edit</button>
+                </div>
               } @else {
                 <input
-                  class="field__input env-row__input"
+                  class="kv-row__input"
                   type="text"
                   [value]="editValue()"
                   (input)="onEditInput($event)"
                   (keyup.enter)="saveEdit(env)"
                   (keyup.escape)="cancelEdit()"
+                  autofocus
                 />
-                <button
-                  class="btn-primary btn-small"
-                  (click)="saveEdit(env)"
-                  [disabled]="savingId() === env.Id"
-                  type="button"
-                >
-                  {{ savingId() === env.Id ? 'Saving...' : 'Save' }}
-                </button>
-                <button class="btn-ghost btn-small" (click)="cancelEdit()" type="button">Cancel</button>
+                <div class="kv-row__actions">
+                  <button class="btn btn--primary btn--xs" (click)="saveEdit(env)" [disabled]="savingId() === env.Id" type="button">
+                    {{ savingId() === env.Id ? '…' : 'Save' }}
+                  </button>
+                  <button class="btn btn--ghost btn--xs" (click)="cancelEdit()" type="button">Cancel</button>
+                </div>
               }
             </div>
-          </div>
-        }
-      </div>
-    }
-  }
-
-  @if (activeTab() === 'users' && isAdmin) {
-    <div class="users-header">
-      <button class="btn-primary" (click)="toggleCreateUser()" type="button">
-        {{ showCreateUser() ? 'Cancel' : 'New user' }}
-      </button>
-    </div>
-
-    @if (showCreateUser()) {
-      <div class="create-form">
-        <p class="create-form__title">New user</p>
-
-        @if (createError()) {
-          <p class="error-message">{{ createError() }}</p>
-        }
-
-        <form [formGroup]="createForm" (ngSubmit)="onCreate()" class="form">
-          <div class="form__row">
-            <div class="field">
-              <label class="field__label">Username</label>
-              <input class="field__input" type="text" formControlName="username" placeholder="username" />
-            </div>
-            <div class="field">
-              <label class="field__label">Email</label>
-              <input class="field__input" type="email" formControlName="email" placeholder="email@example.com" />
-            </div>
-            <div class="field field--small">
-              <label class="field__label">Role</label>
-              <select class="field__input" formControlName="role">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn-primary" type="submit" [disabled]="creating()">
-            {{ creating() ? 'Creating...' : 'Create' }}
-          </button>
-        </form>
-      </div>
-    }
-
-    @if (tempPasswordData()) {
-      <div class="temp-password-box">
-        <div class="temp-password-box__content">
-          <span class="temp-password-box__label">
-            User <strong>{{ tempPasswordData()!.username }}</strong> created. Temporary password:
-          </span>
-          <code class="temp-password-box__code">{{ tempPasswordData()!.password }}</code>
+          }
         </div>
-        <button class="btn-ghost btn-small" (click)="dismissTempPassword()" type="button">Dismiss</button>
-      </div>
-    }
-
-    @if (usersError()) {
-      <p class="error-message">{{ usersError() }}</p>
-    }
-
-    @if (usersLoading()) {
-      <p class="state-message">Loading...</p>
-    } @else if (users().length === 0) {
-      <div class="empty-state">
-        <p class="empty-state__text">No users found.</p>
-      </div>
-    } @else {
-      <div class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (user of users(); track user.id) {
-              <tr class="table-row">
-                <td class="table-row__primary">{{ user.username }}</td>
-                <td class="table-row__secondary">{{ user.email }}</td>
-                <td>
-                  <span [class]="'role-badge role-badge--' + user.role">{{ user.role }}</span>
-                </td>
-                <td>
-                  <span [class]="'status-badge status-badge--' + (user.active ? 'active' : 'inactive')">
-                    {{ user.active ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td class="table-row__secondary">{{ user.created_at | date: 'dd/MM/yyyy' }}</td>
-                <td class="table-row__actions">
-                  <button
-                    class="btn-danger btn-small"
-                    type="button"
-                    [disabled]="deletingId() === user.id"
-                    (click)="onDelete(user.id)"
-                  >
-                    {{ deletingId() === user.id ? 'Removing...' : 'Remove' }}
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  }
-
-  @if (activeTab() === 'rateLimit' && isAdmin) {
-    @if (rateLimitError()) {
-      <p class="error-message">{{ rateLimitError() }}</p>
-    }
-    @if (rateLimitSuccess()) {
-      <p class="success-message">{{ rateLimitSuccess() }}</p>
-    }
-    @if (rateLimitLoading()) {
-      <p class="state-message">Loading...</p>
-    } @else {
-      <div class="create-form">
-        <p class="create-form__title">Global rate limit</p>
-        <form [formGroup]="rateLimitForm" (ngSubmit)="saveRateLimit()" class="form">
-          <div class="form__row">
-            <div class="field">
-              <label class="field__label">Requests per second</label>
-              <input class="field__input" type="number" step="0.1" formControlName="requests_per_second" />
-            </div>
-            <div class="field">
-              <label class="field__label">Burst</label>
-              <input class="field__input" type="number" step="1" formControlName="burst" />
-            </div>
-            <div class="field field--small">
-              <label class="field__label">Progressive</label>
-              <select class="field__input" formControlName="progressive_rate_limit">
-                <option [ngValue]="true">Enabled</option>
-                <option [ngValue]="false">Disabled</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn-primary" type="submit" [disabled]="rateLimitSaving()">
-            {{ rateLimitSaving() ? 'Saving...' : 'Save' }}
-          </button>
-        </form>
-      </div>
-    }
-  }
-
-  @if (activeTab() === 'protocol' && isAdmin) {
-    @if (protocolError()) {
-      <p class="error-message">{{ protocolError() }}</p>
-    }
-    @if (protocolSuccess()) {
-      <p class="success-message">{{ protocolSuccess() }}</p>
-    }
-    @if (protocolLoading()) {
-      <p class="state-message">Loading...</p>
-    } @else {
-      <div class="create-form">
-        <p class="create-form__title">Protocol mode</p>
-        <form [formGroup]="protocolForm" (ngSubmit)="saveProtocolSettings()" class="form">
-          <div class="form__row">
-            <div class="field">
-              <label class="field__label">Allowed protocol</label>
-              <select class="field__input" formControlName="allowed_protocol">
-                <option value="both">Both</option>
-                <option value="https">HTTPS only</option>
-                <option value="http">HTTP only</option>
-              </select>
-            </div>
-            <div class="field">
-              <label class="field__label">Apply scope</label>
-              <select class="field__input" formControlName="apply_scope">
-                <option value="all">All traffic</option>
-                <option value="external">External only</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn-primary" type="submit" [disabled]="protocolSaving()">
-            {{ protocolSaving() ? 'Saving...' : 'Save' }}
-          </button>
-        </form>
-      </div>
-    }
-  }
-
-  @if (activeTab() === 'ipAccess') {
-    <div class="settings-tabs settings-tabs--inner">
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeIPList() === 'whitelist'"
-        (click)="setIPList('whitelist')"
-        type="button"
-      >
-        Whitelist
-      </button>
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeIPList() === 'blacklist'"
-        (click)="setIPList('blacklist')"
-        type="button"
-      >
-        Blacklist
-      </button>
+      }
     </div>
+  }
 
-    @if (ipError()) {
-      <p class="error-message">{{ ipError() }}</p>
-    }
-    @if (ipSuccess()) {
-      <p class="success-message">{{ ipSuccess() }}</p>
-    }
+  <!-- IP ACCESS TAB -->
+  @if (activeTab() === 'ipAccess') {
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">IP Access Lists</h2>
+          <p class="panel-desc">Control which IPs are allowed or denied access to your gateway.</p>
+        </div>
+      </div>
 
-    <div class="create-form">
-      <p class="create-form__title">Add {{ activeIPList() === 'whitelist' ? 'whitelist' : 'blacklist' }} IP</p>
-      <div class="inline-actions">
+      <div class="segment-control">
+        <button class="segment-control__btn" [class.segment-control__btn--active]="activeIPList() === 'whitelist'" (click)="setIPList('whitelist')" type="button">
+          Whitelist
+        </button>
+        <button class="segment-control__btn" [class.segment-control__btn--active]="activeIPList() === 'blacklist'" (click)="setIPList('blacklist')" type="button">
+          Blacklist
+        </button>
+      </div>
+
+      @if (ipError()) { <div class="alert alert--error">{{ ipError() }}</div> }
+      @if (ipSuccess()) { <div class="alert alert--success">{{ ipSuccess() }}</div> }
+
+      <div class="add-row">
         <input
-          class="field__input"
+          class="add-row__input"
           type="text"
+          [placeholder]="'Add IP to ' + (activeIPList() === 'whitelist' ? 'whitelist' : 'blacklist') + '…'"
           [value]="ipNewValue()"
           (input)="onIPInput($event)"
           (keyup.enter)="createIP()"
-          placeholder="203.0.113.10"
         />
-        <button class="btn-primary btn-small" type="button" [disabled]="ipCreating()" (click)="createIP()">
-          {{ ipCreating() ? 'Adding...' : 'Add' }}
+        <button class="btn btn--primary" type="button" [disabled]="ipCreating()" (click)="createIP()">
+          {{ ipCreating() ? 'Adding…' : 'Add IP' }}
         </button>
       </div>
-    </div>
 
-    @if (ipLoading()) {
-      <p class="state-message">Loading...</p>
-    } @else if (currentIPEntries().length === 0) {
-      <div class="empty-state">
-        <p class="empty-state__text">No IPs found.</p>
-        <p class="empty-state__hint">Add an entry to start managing the list.</p>
-      </div>
-    } @else {
-      <div class="env-list">
-        @for (entry of currentIPEntries(); track entry.id) {
-          <div class="env-row">
-            @if (ipEditingId() === entry.id && ipEditingType() === activeIPList()) {
-              <input
-                class="field__input env-row__input"
-                type="text"
-                [value]="ipEditValue()"
-                (input)="onEditIPInput($event)"
-                (keyup.enter)="saveEditIP(entry, activeIPList())"
-                (keyup.escape)="cancelEditIP()"
-              />
-              <div class="env-row__right">
-                <button class="btn-primary btn-small" type="button" [disabled]="ipSavingId() === entry.id" (click)="saveEditIP(entry, activeIPList())">
-                  {{ ipSavingId() === entry.id ? 'Saving...' : 'Save' }}
-                </button>
-                <button class="btn-ghost btn-small" type="button" (click)="cancelEditIP()">Cancel</button>
-              </div>
-            } @else {
-              <span class="env-row__name">{{ entry.ip }}</span>
-              <div class="env-row__right">
-                <button class="btn-ghost btn-small" type="button" (click)="startEditIP(entry, activeIPList())">Edit</button>
-                <button
-                  class="btn-danger btn-small"
-                  type="button"
-                  [disabled]="ipDeletingId() === entry.id"
-                  (click)="deleteIP(entry, activeIPList())"
-                >
-                  {{ ipDeletingId() === entry.id ? 'Removing...' : 'Remove' }}
-                </button>
-              </div>
-            }
-          </div>
-        }
-      </div>
-    }
+      @if (ipLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else if (currentIPEntries().length === 0) {
+        <div class="empty-state">
+          <p class="empty-state__text">No entries in this list.</p>
+          <p class="empty-state__hint">Add an IP above to start managing the {{ activeIPList() }}.</p>
+        </div>
+      } @else {
+        <div class="kv-list">
+          @for (entry of currentIPEntries(); track entry.id) {
+            <div class="kv-row">
+              @if (ipEditingId() === entry.id && ipEditingType() === activeIPList()) {
+                <input
+                  class="kv-row__input"
+                  type="text"
+                  [value]="ipEditValue()"
+                  (input)="onEditIPInput($event)"
+                  (keyup.enter)="saveEditIP(entry, activeIPList())"
+                  (keyup.escape)="cancelEditIP()"
+                />
+                <div class="kv-row__actions">
+                  <button class="btn btn--primary btn--xs" type="button" [disabled]="ipSavingId() === entry.id" (click)="saveEditIP(entry, activeIPList())">
+                    {{ ipSavingId() === entry.id ? '…' : 'Save' }}
+                  </button>
+                  <button class="btn btn--ghost btn--xs" type="button" (click)="cancelEditIP()">Cancel</button>
+                </div>
+              } @else {
+                <code class="kv-row__key">{{ entry.ip }}</code>
+                <span class="kv-row__value">Added {{ entry.created_at | date: 'dd/MM/yy' }}</span>
+                <div class="kv-row__actions">
+                  <button class="btn btn--ghost btn--xs" type="button" (click)="startEditIP(entry, activeIPList())">Edit</button>
+                  <button class="btn btn--danger btn--xs" type="button" [disabled]="ipDeletingId() === entry.id" (click)="deleteIP(entry, activeIPList())">
+                    {{ ipDeletingId() === entry.id ? '…' : 'Remove' }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
   }
 
-  @if (activeTab() === 'specialRoutes' && isAdmin) {
-    <div class="settings-tabs settings-tabs--inner">
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeSpecialType() === 'login'"
-        (click)="setSpecialType('login')"
-        type="button"
-      >
-        Login routes
-      </button>
-      <button
-        class="settings-tab"
-        [class.settings-tab--active]="activeSpecialType() === 'register'"
-        (click)="setSpecialType('register')"
-        type="button"
-      >
-        Register routes
-      </button>
-    </div>
-
-    @if (specialError()) {
-      <p class="error-message">{{ specialError() }}</p>
-    }
-    @if (specialSuccess()) {
-      <p class="success-message">{{ specialSuccess() }}</p>
-    }
-
-    <div class="create-form">
-      <p class="create-form__title">New {{ activeSpecialType() }} route rule</p>
-      <form [formGroup]="specialCreateForm" (ngSubmit)="createSpecialRoute()" class="form">
-        <div class="form__row">
-          <div class="field">
-            <label class="field__label">Path</label>
-            <input class="field__input" type="text" formControlName="path" placeholder="/ward/api/v1/auth/login" />
-          </div>
+  <!-- CORS TAB -->
+  @if (activeTab() === 'cors') {
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">CORS Origins</h2>
+          <p class="panel-desc">Allowed cross-origin domains for browser requests.</p>
         </div>
-        <div class="form__row">
-          <div class="field">
-            <label class="field__label">Max distinct requests</label>
-            <input class="field__input" type="number" formControlName="max_distinct_requests" />
+      </div>
+
+      @if (corsError()) { <div class="alert alert--error">{{ corsError() }}</div> }
+      @if (corsSuccess()) { <div class="alert alert--success">{{ corsSuccess() }}</div> }
+
+      <div class="add-row">
+        <input
+          class="add-row__input"
+          type="text"
+          placeholder="https://example.com"
+          [value]="corsNewValue()"
+          (input)="onCorsInput($event)"
+          (keyup.enter)="createCors()"
+        />
+        <button class="btn btn--primary" type="button" [disabled]="corsCreating()" (click)="createCors()">
+          {{ corsCreating() ? 'Adding…' : 'Add Origin' }}
+        </button>
+      </div>
+
+      @if (corsLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else if (corsEntries().length === 0) {
+        <div class="empty-state">
+          <p class="empty-state__text">No CORS origins configured.</p>
+          <p class="empty-state__hint">Add an origin to allow cross-origin requests from that domain.</p>
+        </div>
+      } @else {
+        <div class="kv-list">
+          @for (entry of corsEntries(); track entry.Id) {
+            <div class="kv-row">
+              @if (corsEditingId() === entry.Id) {
+                <input
+                  class="kv-row__input"
+                  type="text"
+                  [value]="corsEditValue()"
+                  (input)="onEditCorsInput($event)"
+                  (keyup.enter)="saveEditCors(entry)"
+                  (keyup.escape)="cancelEditCors()"
+                />
+                <div class="kv-row__actions">
+                  <button class="btn btn--primary btn--xs" type="button" [disabled]="corsSavingId() === entry.Id" (click)="saveEditCors(entry)">
+                    {{ corsSavingId() === entry.Id ? '…' : 'Save' }}
+                  </button>
+                  <button class="btn btn--ghost btn--xs" type="button" (click)="cancelEditCors()">Cancel</button>
+                </div>
+              } @else {
+                <code class="kv-row__key">{{ entry.Origin }}</code>
+                <div class="kv-row__actions">
+                  <button class="btn btn--ghost btn--xs" type="button" (click)="startEditCors(entry)">Edit</button>
+                  <button class="btn btn--danger btn--xs" type="button" [disabled]="corsDeletingId() === entry.Id" (click)="deleteCors(entry)">
+                    {{ corsDeletingId() === entry.Id ? '…' : 'Remove' }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- SPECIAL ROUTES TAB -->
+  @if (activeTab() === 'specialRoutes' && isAdmin) {
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Special Routes</h2>
+          <p class="panel-desc">Brute-force protection for login and registration endpoints.</p>
+        </div>
+      </div>
+
+      <div class="segment-control">
+        <button class="segment-control__btn" [class.segment-control__btn--active]="activeSpecialType() === 'login'" (click)="setSpecialType('login')" type="button">
+          Login
+        </button>
+        <button class="segment-control__btn" [class.segment-control__btn--active]="activeSpecialType() === 'register'" (click)="setSpecialType('register')" type="button">
+          Register
+        </button>
+      </div>
+
+      @if (specialError()) { <div class="alert alert--error">{{ specialError() }}</div> }
+      @if (specialSuccess()) { <div class="alert alert--success">{{ specialSuccess() }}</div> }
+
+      <div class="card">
+        <p class="card__title">New {{ activeSpecialType() }} route rule</p>
+        <form [formGroup]="specialCreateForm" (ngSubmit)="createSpecialRoute()" class="form-grid">
+          <div class="form-field form-field--wide">
+            <label>Path</label>
+            <input formControlName="path" placeholder="/ward/api/v1/auth/login" />
           </div>
-          <div class="field">
-            <label class="field__label">Window (seconds)</label>
-            <input class="field__input" type="number" formControlName="window_seconds" />
+          <div class="form-field">
+            <label>Max requests</label>
+            <input type="number" formControlName="max_distinct_requests" />
           </div>
-          <div class="field">
-            <label class="field__label">Ban (seconds)</label>
-            <input class="field__input" type="number" formControlName="ban_seconds" />
+          <div class="form-field">
+            <label>Window (s)</label>
+            <input type="number" formControlName="window_seconds" />
           </div>
-          <div class="field field--small">
-            <label class="field__label">Enabled</label>
-            <select class="field__input" formControlName="enabled">
+          <div class="form-field">
+            <label>Ban (s)</label>
+            <input type="number" formControlName="ban_seconds" />
+          </div>
+          <div class="form-field">
+            <label>Enabled</label>
+            <select formControlName="enabled">
               <option [ngValue]="true">Yes</option>
               <option [ngValue]="false">No</option>
             </select>
           </div>
-        </div>
-        <button class="btn-primary" type="submit" [disabled]="specialCreating()">
-          {{ specialCreating() ? 'Creating...' : 'Create rule' }}
-        </button>
-      </form>
-    </div>
-
-    @if (specialLoading()) {
-      <p class="state-message">Loading...</p>
-    } @else if (currentSpecialRoutes().length === 0) {
-      <div class="empty-state">
-        <p class="empty-state__text">No special route rules found.</p>
-        <p class="empty-state__hint">Create a rule to protect this route group.</p>
+          <div class="form-field form-field--action">
+            <button class="btn btn--primary" type="submit" [disabled]="specialCreating()">
+              {{ specialCreating() ? 'Creating…' : 'Create' }}
+            </button>
+          </div>
+        </form>
       </div>
-    } @else {
-      <div class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Path</th>
-              <th>Distinct</th>
-              <th>Window</th>
-              <th>Ban</th>
-              <th>Enabled</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (route of currentSpecialRoutes(); track route.id) {
-              <tr class="table-row">
-                @if (specialEditingId() === route.id && specialEditingType() === route.route_type && specialEditValue()) {
-                  <td><input class="field__input field__input--compact" type="text" [value]="specialEditValue()!.path" (input)="onSpecialEditTextInput('path', $event)" /></td>
-                  <td><input class="field__input field__input--compact" type="number" [value]="specialEditValue()!.max_distinct_requests" (input)="onSpecialEditNumberInput('max_distinct_requests', $event)" /></td>
-                  <td><input class="field__input field__input--compact" type="number" [value]="specialEditValue()!.window_seconds" (input)="onSpecialEditNumberInput('window_seconds', $event)" /></td>
-                  <td><input class="field__input field__input--compact" type="number" [value]="specialEditValue()!.ban_seconds" (input)="onSpecialEditNumberInput('ban_seconds', $event)" /></td>
+
+      @if (specialLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else if (currentSpecialRoutes().length === 0) {
+        <div class="empty-state">
+          <p class="empty-state__text">No rules for {{ activeSpecialType() }} yet.</p>
+          <p class="empty-state__hint">Create one above to enable brute-force protection.</p>
+        </div>
+      } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Max Req</th>
+                <th>Window</th>
+                <th>Ban</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (route of currentSpecialRoutes(); track route.id) {
+                <tr>
+                  @if (specialEditingId() === route.id && specialEditingType() === route.route_type && specialEditValue()) {
+                    <td><input class="inline-input" type="text" [value]="specialEditValue()!.path" (input)="onSpecialEditTextInput('path', $event)" /></td>
+                    <td><input class="inline-input inline-input--sm" type="number" [value]="specialEditValue()!.max_distinct_requests" (input)="onSpecialEditNumberInput('max_distinct_requests', $event)" /></td>
+                    <td><input class="inline-input inline-input--sm" type="number" [value]="specialEditValue()!.window_seconds" (input)="onSpecialEditNumberInput('window_seconds', $event)" /></td>
+                    <td><input class="inline-input inline-input--sm" type="number" [value]="specialEditValue()!.ban_seconds" (input)="onSpecialEditNumberInput('ban_seconds', $event)" /></td>
+                    <td>
+                      <select class="inline-input inline-input--sm" [value]="specialEditValue()!.enabled" (change)="onSpecialEditEnabledChange($event)">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </td>
+                    <td class="actions-cell">
+                      <button class="btn btn--primary btn--xs" type="button" [disabled]="specialSavingId() === route.id" (click)="saveEditSpecialRoute(route)">
+                        {{ specialSavingId() === route.id ? '…' : 'Save' }}
+                      </button>
+                      <button class="btn btn--ghost btn--xs" type="button" (click)="cancelEditSpecialRoute()">Cancel</button>
+                    </td>
+                  } @else {
+                    <td><code class="cell-code">{{ route.path }}</code></td>
+                    <td class="cell-num">{{ route.max_distinct_requests }}</td>
+                    <td class="cell-num">{{ route.window_seconds }}s</td>
+                    <td class="cell-num">{{ route.ban_seconds }}s</td>
+                    <td>
+                      <span [class]="'pill ' + (route.enabled ? 'pill--on' : 'pill--off')">
+                        {{ route.enabled ? 'Enabled' : 'Disabled' }}
+                      </span>
+                    </td>
+                    <td class="actions-cell">
+                      <button class="btn btn--ghost btn--xs" type="button" (click)="startEditSpecialRoute(route)">Edit</button>
+                      <button class="btn btn--danger btn--xs" type="button" [disabled]="specialDeletingId() === route.id" (click)="deleteSpecialRoute(route)">
+                        {{ specialDeletingId() === route.id ? '…' : 'Delete' }}
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- RATE LIMIT TAB -->
+  @if (activeTab() === 'rateLimit' && isAdmin) {
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Global Rate Limit</h2>
+          <p class="panel-desc">Token-bucket rate limiter applied to all incoming traffic.</p>
+        </div>
+      </div>
+
+      @if (rateLimitError()) { <div class="alert alert--error">{{ rateLimitError() }}</div> }
+      @if (rateLimitSuccess()) { <div class="alert alert--success">{{ rateLimitSuccess() }}</div> }
+      @if (rateLimitLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else {
+        <div class="card">
+          <form [formGroup]="rateLimitForm" (ngSubmit)="saveRateLimit()" class="form-grid">
+            <div class="form-field">
+              <label>Requests per second</label>
+              <input type="number" step="0.1" formControlName="requests_per_second" />
+            </div>
+            <div class="form-field">
+              <label>Burst size</label>
+              <input type="number" step="1" formControlName="burst" />
+            </div>
+            <div class="form-field">
+              <label>Progressive blocking</label>
+              <select formControlName="progressive_rate_limit">
+                <option [ngValue]="true">Enabled</option>
+                <option [ngValue]="false">Disabled</option>
+              </select>
+            </div>
+            <div class="form-field form-field--action">
+              <button class="btn btn--primary" type="submit" [disabled]="rateLimitSaving()">
+                {{ rateLimitSaving() ? 'Saving…' : 'Save changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- PROTOCOL TAB -->
+  @if (activeTab() === 'protocol' && isAdmin) {
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Protocol Mode</h2>
+          <p class="panel-desc">Control which protocols are accepted and what scope the rules apply to.</p>
+        </div>
+      </div>
+
+      @if (protocolError()) { <div class="alert alert--error">{{ protocolError() }}</div> }
+      @if (protocolSuccess()) { <div class="alert alert--success">{{ protocolSuccess() }}</div> }
+      @if (protocolLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else {
+        <div class="card">
+          <form [formGroup]="protocolForm" (ngSubmit)="saveProtocolSettings()" class="form-grid">
+            <div class="form-field">
+              <label>Allowed protocol</label>
+              <select formControlName="allowed_protocol">
+                <option value="both">HTTP + HTTPS</option>
+                <option value="https">HTTPS only</option>
+                <option value="http">HTTP only</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Apply scope</label>
+              <select formControlName="apply_scope">
+                <option value="all">All traffic</option>
+                <option value="external">External only</option>
+              </select>
+            </div>
+            <div class="form-field form-field--action">
+              <button class="btn btn--primary" type="submit" [disabled]="protocolSaving()">
+                {{ protocolSaving() ? 'Saving…' : 'Save changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- USERS TAB -->
+  @if (activeTab() === 'users' && isAdmin) {
+    <div class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Users</h2>
+          <p class="panel-desc">Manage dashboard access accounts.</p>
+        </div>
+        <button class="btn btn--primary" (click)="toggleCreateUser()" type="button">
+          {{ showCreateUser() ? 'Cancel' : '+ New User' }}
+        </button>
+      </div>
+
+      @if (showCreateUser()) {
+        <div class="card">
+          <p class="card__title">Create user</p>
+          @if (createError()) { <div class="alert alert--error">{{ createError() }}</div> }
+          <form [formGroup]="createForm" (ngSubmit)="onCreate()" class="form-grid">
+            <div class="form-field">
+              <label>Username</label>
+              <input type="text" formControlName="username" placeholder="username" />
+            </div>
+            <div class="form-field">
+              <label>Email</label>
+              <input type="email" formControlName="email" placeholder="user@example.com" />
+            </div>
+            <div class="form-field">
+              <label>Role</label>
+              <select formControlName="role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-field form-field--action">
+              <button class="btn btn--primary" type="submit" [disabled]="creating()">
+                {{ creating() ? 'Creating…' : 'Create' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      @if (tempPasswordData()) {
+        <div class="alert alert--success alert--password">
+          <div>
+            User <strong>{{ tempPasswordData()!.username }}</strong> created. Temporary password:
+            <code class="inline-code">{{ tempPasswordData()!.password }}</code>
+          </div>
+          <button class="btn btn--ghost btn--xs" (click)="dismissTempPassword()" type="button">Dismiss</button>
+        </div>
+      }
+
+      @if (usersError()) { <div class="alert alert--error">{{ usersError() }}</div> }
+      @if (usersLoading()) {
+        <div class="state-msg">Loading…</div>
+      } @else if (users().length === 0) {
+        <div class="empty-state">
+          <p class="empty-state__text">No users found.</p>
+        </div>
+      } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of users(); track user.id) {
+                <tr>
+                  <td class="cell-primary">{{ user.username }}</td>
+                  <td class="cell-secondary">{{ user.email }}</td>
                   <td>
-                    <select class="field__input field__input--compact" [value]="specialEditValue()!.enabled" (change)="onSpecialEditEnabledChange($event)">
-                      <option value="true">Yes</option>
-                      <option value="false">No</option>
-                    </select>
+                    <span [class]="'pill pill--role-' + user.role">{{ user.role }}</span>
                   </td>
-                  <td class="table-row__actions">
-                    <button class="btn-primary btn-small" type="button" [disabled]="specialSavingId() === route.id" (click)="saveEditSpecialRoute(route)">
-                      {{ specialSavingId() === route.id ? 'Saving...' : 'Save' }}
-                    </button>
-                    <button class="btn-ghost btn-small" type="button" (click)="cancelEditSpecialRoute()">Cancel</button>
-                  </td>
-                } @else {
-                  <td class="table-row__primary">{{ route.path }}</td>
-                  <td class="table-row__secondary">{{ route.max_distinct_requests }}</td>
-                  <td class="table-row__secondary">{{ route.window_seconds }}s</td>
-                  <td class="table-row__secondary">{{ route.ban_seconds }}s</td>
                   <td>
-                    <span [class]="'status-badge status-badge--' + (route.enabled ? 'active' : 'inactive')">
-                      {{ route.enabled ? 'Enabled' : 'Disabled' }}
+                    <span [class]="'pill ' + (user.active ? 'pill--on' : 'pill--off')">
+                      {{ user.active ? 'Active' : 'Inactive' }}
                     </span>
                   </td>
-                  <td class="table-row__actions">
-                    <button class="btn-ghost btn-small" type="button" (click)="startEditSpecialRoute(route)">Edit</button>
-                    <button
-                      class="btn-danger btn-small"
-                      type="button"
-                      [disabled]="specialDeletingId() === route.id"
-                      (click)="deleteSpecialRoute(route)"
-                    >
-                      {{ specialDeletingId() === route.id ? 'Removing...' : 'Remove' }}
+                  <td class="cell-secondary">{{ user.created_at | date: 'dd/MM/yyyy' }}</td>
+                  <td class="actions-cell">
+                    <button class="btn btn--danger btn--xs" type="button" [disabled]="deletingId() === user.id" (click)="onDelete(user.id)">
+                      {{ deletingId() === user.id ? '…' : 'Remove' }}
                     </button>
                   </td>
-                }
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
   }
 
 </div>

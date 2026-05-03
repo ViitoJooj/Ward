@@ -5,13 +5,14 @@ import { ApplicationsComponent } from './views/applications/applications.compone
 import { HealthComponent } from './views/health/health.component';
 import { LogsComponent } from './views/logs/logs.component';
 import { SettingsComponent } from './views/settings/settings.component';
+import { RoutesComponent } from './views/routes/routes.component';
 
-type ActiveView = 'applications' | 'health' | 'logs' | 'settings';
+type ActiveView = 'applications' | 'health' | 'logs' | 'routes' | 'settings';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ApplicationsComponent, HealthComponent, LogsComponent, SettingsComponent],
+  imports: [CommonModule, ApplicationsComponent, HealthComponent, LogsComponent, SettingsComponent, RoutesComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

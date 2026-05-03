@@ -1,0 +1,229 @@
+<div class="routes-view">
+  <header class="routes-header">
+    <div class="routes-header__left">
+      <h1 class="routes-header__title">Route Rules</h1>
+      <p class="routes-header__subtitle">Per-route rate limiting, target overrides, and geo-routing</p>
+    </div>
+    <button class="btn btn--primary" (click)="toggleCreate()" type="button">
+      {{ showCreate() ? 'Cancel' : '+ New Rule' }}
+    </button>
+  </header>
+
+  @if (success()) {
+    <div class="alert alert--success">{{ success() }}</div>
+  }
+  @if (error()) {
+    <div class="alert alert--error">{{ error() }}</div>
+  }
+
+  @if (showCreate()) {
+    <div class="rule-form card">
+      <h2 class="rule-form__title">New Route Rule</h2>
+      @if (createError()) {
+        <div class="alert alert--error">{{ createError() }}</div>
+      }
+      <form [formGroup]="createForm" (ngSubmit)="onCreate()">
+        <div class="form-row">
+          <div class="form-field form-field--wide">
+            <label>Path <span class="required">*</span></label>
+            <input formControlName="path" placeholder="/api/resource" />
+          </div>
+          <div class="form-field">
+            <label>Method</label>
+            <select formControlName="method">
+              <option value="">Any</option>
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="PATCH">PATCH</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Enabled</label>
+            <select formControlName="enabled">
+              <option [ngValue]="true">Yes</option>
+              <option [ngValue]="false">No</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field form-field--wide">
+            <label>Target URL override</label>
+            <input formControlName="target_url" placeholder="https://upstream.example.com (leave empty to use default)" />
+          </div>
+          <div class="form-field">
+            <label>Geo-routing</label>
+            <select formControlName="geo_routing_enabled">
+              <option [ngValue]="false">Disabled</option>
+              <option [ngValue]="true">Enabled</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row form-row--toggle">
+          <label class="toggle-label">
+            <input type="checkbox" formControlName="rate_limit_enabled" />
+            <span>Custom rate limit for this route</span>
+          </label>
+        </div>
+
+        @if (isCreateRateLimitEnabled()) {
+          <div class="form-row">
+            <div class="form-field">
+              <label>Requests / sec</label>
+              <input type="number" formControlName="rate_limit_rps" min="0.0001" step="0.5" />
+            </div>
+            <div class="form-field">
+              <label>Burst</label>
+              <input type="number" formControlName="rate_limit_burst" min="1" step="1" />
+            </div>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" [disabled]="createForm.invalid || creating()">
+            {{ creating() ? 'Creating…' : 'Create Rule' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="toggleCreate()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <div class="rules-toolbar">
+    <input
+      class="search-input"
+      placeholder="Filter by path or method…"
+      [value]="pathFilter()"
+      (input)="onFilterInput($event)"
+    />
+    <span class="rules-count">{{ filteredRules().length }} rule{{ filteredRules().length !== 1 ? 's' : '' }}</span>
+  </div>
+
+  @if (loading()) {
+    <div class="state-msg">Loading…</div>
+  } @else if (filteredRules().length === 0) {
+    <div class="state-msg state-msg--empty">
+      @if (pathFilter()) {
+        No rules match "{{ pathFilter() }}".
+      } @else {
+        No route rules yet. Create one to add per-route overrides.
+      }
+    </div>
+  } @else {
+    <div class="rules-list">
+      @for (rule of filteredRules(); track rule.id) {
+        <div class="rule-card" [class.rule-card--disabled]="!rule.enabled">
+
+          @if (editingId() === rule.id) {
+            <form [formGroup]="editForm" (ngSubmit)="saveEdit(rule)" class="rule-edit">
+              <div class="form-row">
+                <div class="form-field form-field--wide">
+                  <label>Path</label>
+                  <input formControlName="path" />
+                </div>
+                <div class="form-field">
+                  <label>Method</label>
+                  <select formControlName="method">
+                    <option value="">Any</option>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>Enabled</label>
+                  <select formControlName="enabled">
+                    <option [ngValue]="true">Yes</option>
+                    <option [ngValue]="false">No</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field form-field--wide">
+                  <label>Target URL</label>
+                  <input formControlName="target_url" placeholder="https://upstream (leave empty for default)" />
+                </div>
+                <div class="form-field">
+                  <label>Geo-routing</label>
+                  <select formControlName="geo_routing_enabled">
+                    <option [ngValue]="false">Disabled</option>
+                    <option [ngValue]="true">Enabled</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row form-row--toggle">
+                <label class="toggle-label">
+                  <input type="checkbox" formControlName="rate_limit_enabled" />
+                  <span>Custom rate limit</span>
+                </label>
+              </div>
+              @if (isRateLimitEnabled()) {
+                <div class="form-row">
+                  <div class="form-field">
+                    <label>Requests / sec</label>
+                    <input type="number" formControlName="rate_limit_rps" min="0.0001" step="0.5" />
+                  </div>
+                  <div class="form-field">
+                    <label>Burst</label>
+                    <input type="number" formControlName="rate_limit_burst" min="1" step="1" />
+                  </div>
+                </div>
+              }
+              <div class="rule-edit__actions">
+                <button type="submit" class="btn btn--primary btn--sm" [disabled]="editForm.invalid || savingId() === rule.id">
+                  {{ savingId() === rule.id ? 'Saving…' : 'Save' }}
+                </button>
+                <button type="button" class="btn btn--ghost btn--sm" (click)="cancelEdit()">Cancel</button>
+              </div>
+            </form>
+          } @else {
+            <div class="rule-card__body">
+              <div class="rule-card__path">
+                <span class="method-badge" [class]="'method-badge--' + (rule.method || 'any').toLowerCase()">
+                  {{ rule.method || 'ANY' }}
+                </span>
+                <code class="rule-path">{{ rule.path }}</code>
+                @if (!rule.enabled) {
+                  <span class="badge badge--disabled">disabled</span>
+                }
+              </div>
+
+              <div class="rule-card__tags">
+                @if (rule.rate_limit_enabled) {
+                  <span class="tag tag--rate">
+                    {{ rule.rate_limit_rps }} rps · burst {{ rule.rate_limit_burst }}
+                  </span>
+                }
+                @if (rule.target_url) {
+                  <span class="tag tag--target" [title]="rule.target_url">
+                    → {{ rule.target_url }}
+                  </span>
+                }
+                @if (rule.geo_routing_enabled) {
+                  <span class="tag tag--geo">geo-routing</span>
+                }
+              </div>
+            </div>
+
+            <div class="rule-card__actions">
+              <button class="btn btn--ghost btn--sm" (click)="startEdit(rule)" type="button">Edit</button>
+              <button
+                class="btn btn--danger btn--sm"
+                (click)="deleteRule(rule)"
+                [disabled]="deletingId() === rule.id"
+                type="button"
+              >
+                {{ deletingId() === rule.id ? '…' : 'Delete' }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

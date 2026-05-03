@@ -8,9 +8,10 @@ import { RateLimitService } from '../../../../core/services/rate-limit.service';
 import { ProtocolSettingsService } from '../../../../core/services/protocol-settings.service';
 import { IPAccessListType, IPAccessService } from '../../../../core/services/ip-access.service';
 import { SpecialRouteInput, SpecialRoutesService } from '../../../../core/services/special-routes.service';
-import { EnvVar, AdminUser, IPAccessData, SpecialRouteData, SpecialRouteType } from '../../dashboard.models';
+import { CorsService } from '../../../../core/services/cors.service';
+import { EnvVar, AdminUser, IPAccessData, SpecialRouteData, SpecialRouteType, CorsItem } from '../../dashboard.models';
 
-type SettingsTab = 'env' | 'users' | 'rateLimit' | 'protocol' | 'ipAccess' | 'specialRoutes';
+type SettingsTab = 'env' | 'users' | 'rateLimit' | 'protocol' | 'ipAccess' | 'specialRoutes' | 'cors';
 
 @Component({
   selector: 'app-settings',
@@ -84,6 +85,18 @@ export class SettingsComponent implements OnInit {
   specialDeletingId = signal<number | null>(null);
   specialEditValue = signal<SpecialRouteInput | null>(null);
 
+  corsEntries = signal<CorsItem[]>([]);
+  corsLoading = signal(false);
+  corsCreating = signal(false);
+  corsError = signal<string | null>(null);
+  corsSuccess = signal<string | null>(null);
+  corsNewValue = signal('');
+  corsEditingId = signal<number | null>(null);
+  corsEditValue = signal('');
+  corsSavingId = signal<number | null>(null);
+  corsDeletingId = signal<number | null>(null);
+  private corsLoaded = false;
+
   createForm: FormGroup;
   rateLimitForm: FormGroup;
   protocolForm: FormGroup;
@@ -97,6 +110,7 @@ export class SettingsComponent implements OnInit {
     private protocolSettingsService: ProtocolSettingsService,
     private ipAccessService: IPAccessService,
     private specialRoutesService: SpecialRoutesService,
+    private corsService: CorsService,
     private fb: FormBuilder
   ) {
     this.isAdmin = this.authService.getCurrentUser()?.role === 'admin';
@@ -145,6 +159,9 @@ export class SettingsComponent implements OnInit {
     if (tab === 'specialRoutes' && this.isAdmin && !this.specialLoading()) {
       if (!this.specialLoginLoaded) this.loadSpecialRoutes('login');
       if (!this.specialRegisterLoaded) this.loadSpecialRoutes('register');
+    }
+    if (tab === 'cors' && !this.corsLoaded && !this.corsLoading()) {
+      this.loadCors();
     }
   }
 
@@ -613,6 +630,97 @@ export class SettingsComponent implements OnInit {
       error: (err) => {
         this.specialDeletingId.set(null);
         this.specialError.set(this.extractError(err, 'Failed to remove special route.'));
+      }
+    });
+  }
+
+  loadCors(): void {
+    this.corsLoading.set(true);
+    this.corsError.set(null);
+    this.corsService.getAll().subscribe({
+      next: (data) => {
+        this.corsEntries.set(data ?? []);
+        this.corsLoading.set(false);
+        this.corsLoaded = true;
+      },
+      error: (err) => {
+        this.corsError.set(this.extractError(err, 'Failed to load CORS origins.'));
+        this.corsLoading.set(false);
+      }
+    });
+  }
+
+  onCorsInput(event: Event): void {
+    this.corsNewValue.set((event.target as HTMLInputElement).value);
+  }
+
+  createCors(): void {
+    const origin = this.corsNewValue().trim();
+    if (!origin || this.corsCreating()) return;
+    this.corsCreating.set(true);
+    this.corsError.set(null);
+    this.corsSuccess.set(null);
+    this.corsService.create(origin).subscribe({
+      next: (res) => {
+        this.corsCreating.set(false);
+        this.corsNewValue.set('');
+        this.corsSuccess.set(res.message || 'CORS origin added.');
+        this.loadCors();
+      },
+      error: (err) => {
+        this.corsCreating.set(false);
+        this.corsError.set(this.extractError(err, 'Failed to add CORS origin.'));
+      }
+    });
+  }
+
+  startEditCors(entry: CorsItem): void {
+    this.corsEditingId.set(entry.Id);
+    this.corsEditValue.set(entry.Origin);
+  }
+
+  onEditCorsInput(event: Event): void {
+    this.corsEditValue.set((event.target as HTMLInputElement).value);
+  }
+
+  cancelEditCors(): void {
+    this.corsEditingId.set(null);
+    this.corsEditValue.set('');
+  }
+
+  saveEditCors(entry: CorsItem): void {
+    const value = this.corsEditValue().trim();
+    if (!value || this.corsSavingId() !== null) return;
+    this.corsSavingId.set(entry.Id);
+    this.corsError.set(null);
+    this.corsSuccess.set(null);
+    this.corsService.update(entry.Id, value).subscribe({
+      next: (res) => {
+        this.corsSavingId.set(null);
+        this.corsSuccess.set(res.message || 'CORS origin updated.');
+        this.cancelEditCors();
+        this.loadCors();
+      },
+      error: (err) => {
+        this.corsSavingId.set(null);
+        this.corsError.set(this.extractError(err, 'Failed to update CORS origin.'));
+      }
+    });
+  }
+
+  deleteCors(entry: CorsItem): void {
+    this.corsDeletingId.set(entry.Id);
+    this.corsError.set(null);
+    this.corsSuccess.set(null);
+    this.corsService.delete(entry.Id).subscribe({
+      next: (res) => {
+        this.corsDeletingId.set(null);
+        this.corsSuccess.set(res.message || 'CORS origin removed.');
+        this.loadCors();
+      },
+      error: (err) => {
+        this.corsDeletingId.set(null);
+        this.corsError.set(this.extractError(err, 'Failed to remove CORS origin.'));
       }
     });
   }

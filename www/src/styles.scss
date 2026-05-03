@@ -1,3 +1,42 @@
+:root {
+  --ward-accent:          #9eff00;
+  --ward-accent-dim:      rgba(158, 255, 0, 0.07);
+  --ward-accent-glow:     rgba(158, 255, 0, 0.22);
+  --ward-accent-border:   rgba(158, 255, 0, 0.18);
+
+  --ward-bg-root:         #0a0a0a;
+  --ward-bg-surface:      #0f0f0f;
+  --ward-bg-elevated:     #111111;
+  --ward-bg-inset:        #080808;
+
+  --ward-border:          #1e1e1e;
+  --ward-border-subtle:   #1a1a1a;
+  --ward-border-faint:    #141414;
+
+  --ward-text-primary:    #ffffff;
+  --ward-text-secondary:  #888888;
+  --ward-text-muted:      #555555;
+  --ward-text-dim:        #444444;
+  --ward-text-faint:      #333333;
+  --ward-text-ghost:      #2a2a2a;
+
+  --ward-healthy:         #9eff00;
+  --ward-degraded:        #ffb900;
+  --ward-unhealthy:       #ff4444;
+
+  --ward-method-get:      #5a9fd4;
+  --ward-method-post:     #52b788;
+  --ward-method-put:      #e0a84c;
+  --ward-method-patch:    #9b8cff;
+  --ward-method-delete:   #ff4444;
+
+  --ward-mono:            'SF Mono', 'Fira Code', monospace;
+  --ward-radius-xl:       16px;
+  --ward-radius:          12px;
+  --ward-radius-sm:       8px;
+  --ward-radius-xs:       6px;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -7,15 +46,15 @@
 html, body {
   height: 100%;
   width: 100%;
-  background-color: #0a0a0a;
-  color: #ffffff;
+  background-color: var(--ward-bg-root);
+  color: var(--ward-text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 ::selection {
-  background: rgba(158, 255, 0, 0.2);
+  background: var(--ward-accent-glow);
   color: #ffffff;
 }
 
@@ -35,4 +74,19 @@ html, body {
   &:hover {
     background: #333333;
   }
+}
+
+.jvectormap-container {
+  width: 100%;
+  height: 100%;
+}
+
+.jvectormap-tooltip {
+  background: var(--ward-bg-elevated) !important;
+  border: 1px solid var(--ward-border) !important;
+  color: var(--ward-text-primary) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
 }

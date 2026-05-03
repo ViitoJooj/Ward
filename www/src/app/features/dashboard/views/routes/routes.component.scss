@@ -1,0 +1,331 @@
+.routes-view {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.routes-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ward-text-primary);
+    margin: 0 0 0.25rem;
+  }
+
+  &__subtitle {
+    font-size: 0.85rem;
+    color: var(--ward-text-muted);
+    margin: 0;
+  }
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+
+  &--success {
+    background: rgba(158, 255, 0, 0.08);
+    border: 1px solid rgba(158, 255, 0, 0.25);
+    color: var(--ward-healthy);
+  }
+
+  &--error {
+    background: rgba(255, 68, 68, 0.08);
+    border: 1px solid rgba(255, 68, 68, 0.25);
+    color: var(--ward-unhealthy);
+  }
+}
+
+.card {
+  background: var(--ward-bg-surface);
+  border: 1px solid var(--ward-border);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.rule-form {
+  &__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ward-text-primary);
+    margin: 0 0 1.25rem;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  &--toggle {
+    align-items: center;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 140px;
+
+  &--wide {
+    flex: 2;
+    min-width: 200px;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ward-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input, select {
+    background: var(--ward-bg-root);
+    border: 1px solid var(--ward-border);
+    border-radius: 6px;
+    color: var(--ward-text-primary);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s;
+
+    &:focus {
+      border-color: var(--ward-accent);
+    }
+  }
+
+  select option {
+    background: var(--ward-bg-surface);
+  }
+}
+
+.required {
+  color: var(--ward-unhealthy);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--ward-text-secondary);
+
+  input[type="checkbox"] {
+    accent-color: var(--ward-accent);
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.rules-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-input {
+  flex: 1;
+  background: var(--ward-bg-surface);
+  border: 1px solid var(--ward-border);
+  border-radius: 6px;
+  color: var(--ward-text-primary);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus { border-color: var(--ward-accent); }
+  &::placeholder { color: var(--ward-text-muted); }
+}
+
+.rules-count {
+  font-size: 0.8rem;
+  color: var(--ward-text-muted);
+  white-space: nowrap;
+}
+
+.state-msg {
+  text-align: center;
+  color: var(--ward-text-muted);
+  padding: 3rem 0;
+  font-size: 0.9rem;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rule-card {
+  background: var(--ward-bg-surface);
+  border: 1px solid var(--ward-border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  &--disabled {
+    opacity: 0.55;
+  }
+
+  &__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__path {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  &__tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    justify-content: flex-end;
+  }
+}
+
+.rule-edit {
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+}
+
+.method-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ward-text-secondary);
+
+  &--get    { background: rgba(0, 200, 100, 0.12); color: #4caf50; }
+  &--post   { background: rgba(33, 150, 243, 0.12); color: #42a5f5; }
+  &--put    { background: rgba(255, 152, 0, 0.12); color: #ffa726; }
+  &--patch  { background: rgba(156, 39, 176, 0.12); color: #ce93d8; }
+  &--delete { background: rgba(255, 68, 68, 0.12); color: var(--ward-unhealthy); }
+  &--any    { background: rgba(255, 255, 255, 0.06); color: var(--ward-text-muted); }
+}
+
+.rule-path {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: var(--ward-text-primary);
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+
+  &--disabled {
+    background: rgba(255, 68, 68, 0.1);
+    color: var(--ward-unhealthy);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+  }
+}
+
+.tag {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+
+  &--rate {
+    background: rgba(158, 255, 0, 0.08);
+    color: var(--ward-accent);
+    border: 1px solid rgba(158, 255, 0, 0.2);
+  }
+
+  &--target {
+    background: rgba(33, 150, 243, 0.08);
+    color: #42a5f5;
+    border: 1px solid rgba(33, 150, 243, 0.2);
+  }
+
+  &--geo {
+    background: rgba(156, 39, 176, 0.08);
+    color: #ce93d8;
+    border: 1px solid rgba(156, 39, 176, 0.2);
+  }
+}
+
+.btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, background 0.15s;
+
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  &--primary {
+    background: var(--ward-accent);
+    color: #000;
+    &:not(:disabled):hover { opacity: 0.88; }
+  }
+
+  &--ghost {
+    background: transparent;
+    border: 1px solid var(--ward-border);
+    color: var(--ward-text-secondary);
+    &:not(:disabled):hover { border-color: rgba(255,255,255,0.2); color: var(--ward-text-primary); }
+  }
+
+  &--danger {
+    background: transparent;
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    color: var(--ward-unhealthy);
+    &:not(:disabled):hover { background: rgba(255, 68, 68, 0.08); }
+  }
+
+  &--sm {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}

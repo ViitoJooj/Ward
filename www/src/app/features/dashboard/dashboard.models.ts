@@ -163,6 +163,56 @@ export interface SpecialRouteOutput {
   data: SpecialRouteData;
 }
 
+export interface CorsItem {
+  Id: number;
+  Name: string;
+  Origin: string;
+}
+
+export interface CorsOutput {
+  success: boolean;
+  message: string;
+  data: {
+    id: number;
+    origin: string;
+    created_by: {
+      id: number;
+      username: string;
+      email: string;
+      updated_at: string;
+      created_at: string;
+    };
+  };
+}
+
+export interface RouteRule {
+  id: number;
+  path: string;
+  method: string;
+  rate_limit_enabled: boolean;
+  rate_limit_rps: number;
+  rate_limit_burst: number;
+  target_url: string;
+  geo_routing_enabled: boolean;
+  enabled: boolean;
+  created_by: number;
+  updated_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RouteRuleListOutput {
+  success: boolean;
+  message: string;
+  data: RouteRule[];
+}
+
+export interface RouteRuleOutput {
+  success: boolean;
+  message: string;
+  data: RouteRule;
+}
+
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 
 export interface HealthOverviewData {

@@ -30,6 +30,14 @@
       </button>
       <button
         class="nav-item"
+        [class.nav-item--active]="activeView() === 'routes'"
+        (click)="setView('routes')"
+        type="button"
+      >
+        Routes
+      </button>
+      <button
+        class="nav-item"
         [class.nav-item--active]="activeView() === 'settings'"
         (click)="setView('settings')"
         type="button"
@@ -52,6 +60,9 @@
     }
     @if (activeView() === 'health') {
       <app-health />
+    }
+    @if (activeView() === 'routes') {
+      <app-routes />
     }
     @if (activeView() === 'settings') {
       <app-settings />

@@ -3,7 +3,7 @@
   <div class="view__header">
     <div>
       <h2 class="view__title">Logs</h2>
-      <p class="view__subtitle">Real-time requests &mdash; updates every 3s.</p>
+      <p class="view__subtitle">Real-time requests — updates every 3s.</p>
     </div>
     <span class="live-badge">
       <span class="live-badge__dot"></span>
@@ -11,29 +11,59 @@
     </span>
   </div>
 
+  <div class="filters">
+    <input
+      class="filter-input"
+      type="text"
+      placeholder="Filter by path..."
+      [value]="filterPath()"
+      (input)="onFilterPathInput($event)"
+    />
+    <div class="filter-status-group">
+      @for (s of statusOptions; track s) {
+        <button
+          [class]="'filter-status filter-status--' + s + (filterStatus() === s ? ' filter-status--active' : '')"
+          (click)="setFilterStatus(s)"
+          type="button"
+        >{{ s }}</button>
+      }
+    </div>
+    <span class="filter-count">{{ filtered().length }} / {{ logs().length }}</span>
+  </div>
+
   @if (loading()) {
     <p class="state-message">Loading...</p>
   } @else if (logs().length === 0) {
     <div class="empty-state">
       <p class="empty-state__text">No requests registered yet.</p>
-<p class="empty-state__hint">Make a request through the gateway to see it here.</p>
+      <p class="empty-state__hint">Make a request through the gateway to see it here.</p>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <p class="empty-state__text">No logs match the current filter.</p>
     </div>
   } @else {
     <div class="log-table-wrapper">
       <table class="log-table">
         <thead>
           <tr>
+            <th></th>
             <th>Method</th>
             <th>Status</th>
             <th>Path</th>
             <th>IP</th>
+            <th>Country</th>
+            <th>Res size</th>
             <th>Time</th>
             <th>When</th>
           </tr>
         </thead>
         <tbody>
-          @for (log of logs(); track log.id) {
-            <tr class="log-row">
+          @for (log of filtered(); track log.id) {
+            <tr class="log-row" [class.log-row--expanded]="expandedId() === log.id" (click)="toggleRow(log.id)">
+              <td class="log-row__toggle">
+                <span class="toggle-icon">{{ expandedId() === log.id ? '▾' : '▸' }}</span>
+              </td>
               <td>
                 <span [class]="methodClass(log.method)">{{ log.method }}</span>
               </td>
@@ -47,9 +77,52 @@
                 }
               </td>
               <td class="log-row__secondary">{{ log.ip }}</td>
+              <td class="log-row__secondary">{{ log.country || '—' }}</td>
+              <td class="log-row__secondary">{{ formatBytes(log.response_size) }}</td>
               <td class="log-row__secondary">{{ log.response_time_ms }}ms</td>
               <td class="log-row__secondary">{{ log.created_at | date: 'dd/MM HH:mm:ss' }}</td>
             </tr>
+
+            @if (expandedId() === log.id) {
+              <tr class="log-detail-row">
+                <td colspan="9">
+                  <div class="log-detail">
+                    <div class="log-detail__grid">
+                      <div class="detail-item">
+                        <span class="detail-item__label">Type</span>
+                        <span [class]="'type-badge type-badge--' + (log.internal ? 'internal' : 'proxied')">
+                          {{ log.internal ? 'internal' : 'proxied' }}
+                        </span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-item__label">Request size</span>
+                        <span class="detail-item__value">{{ formatBytes(log.request_size) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-item__label">Response size</span>
+                        <span class="detail-item__value">{{ formatBytes(log.response_size) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-item__label">Response time</span>
+                        <span class="detail-item__value">{{ log.response_time_ms }} ms</span>
+                      </div>
+                    </div>
+                    @if (log.user_agent) {
+                      <div class="detail-item detail-item--full">
+                        <span class="detail-item__label">User agent</span>
+                        <span class="detail-item__value detail-item__value--mono">{{ log.user_agent }}</span>
+                      </div>
+                    }
+                    @if (log.referer) {
+                      <div class="detail-item detail-item--full">
+                        <span class="detail-item__label">Referer</span>
+                        <span class="detail-item__value detail-item__value--mono">{{ log.referer }}</span>
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>

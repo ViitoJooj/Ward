@@ -9,7 +9,7 @@
 .view {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
   padding: 48px;
   flex: 1;
   min-height: 0;
@@ -52,7 +52,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #9EFF00;
+  background-color: #9eff00;
   box-shadow: 0 0 6px rgba(158, 255, 0, 0.5);
   animation: pulse 2s ease-in-out infinite;
 }
@@ -62,9 +62,71 @@
   50% { opacity: 0.4; box-shadow: 0 0 2px rgba(158, 255, 0, 0.1); }
 }
 
+// FILTERS
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  background: #0a0a0a;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #ffffff;
+  outline: none;
+  width: 220px;
+  transition: border-color 0.15s;
+
+  &::placeholder { color: #2a2a2a; }
+  &:focus { border-color: #333333; }
+}
+
+.filter-status-group {
+  display: flex;
+  gap: 4px;
+}
+
+.filter-status {
+  background: none;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: #333333;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+
+  &:hover:not(.filter-status--active) {
+    color: #666666;
+    border-color: #333333;
+  }
+
+  &--active,
+  &--all.filter-status--active  { color: #ffffff; border-color: #444444; background: #1a1a1a; }
+  &--2xx.filter-status--active  { color: #52b788; border-color: #52b788; background: rgba(82,183,136,0.08); }
+  &--3xx.filter-status--active  { color: #5a9fd4; border-color: #5a9fd4; background: rgba(90,159,212,0.08); }
+  &--4xx.filter-status--active  { color: #e0a84c; border-color: #e0a84c; background: rgba(224,168,76,0.08); }
+  &--5xx.filter-status--active  { color: #ff4444; border-color: #ff4444; background: rgba(255,68,68,0.08); }
+}
+
+.filter-count {
+  font-size: 11px;
+  color: #2a2a2a;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  margin-left: 4px;
+}
+
+// TABLE
 .log-table-wrapper {
   overflow-x: auto;
-  border: 1px solid #1e1e1e;
+  border: 1px solid #1a1a1a;
   border-radius: 12px;
 }
 
@@ -74,50 +136,59 @@
   font-size: 12px;
 
   thead tr {
-    border-bottom: 1px solid #1e1e1e;
+    border-bottom: 1px solid #1a1a1a;
   }
 
   th {
-    padding: 12px 16px;
+    padding: 11px 14px;
     text-align: left;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #2a2a2a;
+    color: #262626;
     white-space: nowrap;
-    background-color: #111111;
+    background: #0f0f0f;
   }
 }
 
 .log-row {
-  border-bottom: 1px solid #141414;
+  border-bottom: 1px solid #111111;
+  cursor: pointer;
   transition: background-color 0.1s;
 
-  &:last-child {
-    border-bottom: none;
-  }
+  &:hover { background: #0f0f0f; }
 
-  &:hover {
-    background-color: #111111;
-  }
+  &--expanded { background: #0f0f0f; }
+
+  &:last-child { border-bottom: none; }
 
   td {
-    padding: 11px 16px;
+    padding: 10px 14px;
     color: #ffffff;
     vertical-align: middle;
     white-space: nowrap;
   }
 }
 
+.log-row__toggle {
+  width: 24px;
+  padding-right: 0 !important;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  color: #333333;
+}
+
 .log-row__path {
-  max-width: 320px;
+  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap !important;
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 11px;
-  color: #aaaaaa !important;
+  color: #888888 !important;
 }
 
 .log-row__query {
@@ -125,9 +196,77 @@
 }
 
 .log-row__secondary {
-  color: #444444 !important;
+  color: #3a3a3a !important;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
 }
 
+// EXPANDED DETAIL ROW
+.log-detail-row {
+  background: #0a0a0a;
+  border-bottom: 1px solid #111111;
+
+  td { padding: 0 !important; }
+}
+
+.log-detail {
+  padding: 14px 16px 14px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #141414;
+}
+
+.log-detail__grid {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &--full {
+    width: 100%;
+  }
+}
+
+.detail-item__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #2a2a2a;
+}
+
+.detail-item__value {
+  font-size: 12px;
+  color: #666666;
+
+  &--mono {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    word-break: break-all;
+    white-space: normal;
+  }
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &--proxied  { background: rgba(158, 255, 0, 0.07); color: #9eff00; }
+  &--internal { background: #1a1a1a; color: #444444; }
+}
+
+// METHOD & STATUS BADGES
 .method {
   display: inline-block;
   padding: 2px 7px;
@@ -137,11 +276,12 @@
   letter-spacing: 0.06em;
   font-family: 'SF Mono', 'Fira Code', monospace;
 
-  &--get    { background-color: #0a1c2e; color: #5a9fd4; }
-  &--post   { background-color: #0a1e16; color: #52b788; }
-  &--put    { background-color: #1e1806; color: #e0a84c; }
-  &--patch  { background-color: #18102e; color: #9b8cff; }
-  &--delete { background-color: #1e0a0a; color: #ff4444; }
+  &--get    { background: #0a1c2e; color: #5a9fd4; }
+  &--post   { background: #0a1e16; color: #52b788; }
+  &--put    { background: #1e1806; color: #e0a84c; }
+  &--patch  { background: #18102e; color: #9b8cff; }
+  &--delete { background: #1e0a0a; color: #ff4444; }
+  &--options { background: #141414; color: #555555; }
 }
 
 .status {
@@ -153,10 +293,10 @@
   letter-spacing: 0.06em;
   font-family: 'SF Mono', 'Fira Code', monospace;
 
-  &--2xx { background-color: #0a1e16; color: #52b788; }
-  &--3xx { background-color: #0a1c2e; color: #5a9fd4; }
-  &--4xx { background-color: #1e1806; color: #e0a84c; }
-  &--5xx { background-color: #1e0a0a; color: #ff4444; }
+  &--2xx { background: #0a1e16; color: #52b788; }
+  &--3xx { background: #0a1c2e; color: #5a9fd4; }
+  &--4xx { background: #1e1806; color: #e0a84c; }
+  &--5xx { background: #1e0a0a; color: #ff4444; }
 }
 
 .state-message {

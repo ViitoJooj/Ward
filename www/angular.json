@@ -53,7 +53,12 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "node_modules/jsvectormap/dist/jsvectormap.min.css"
+            ],
+            "scripts": [
+              "node_modules/jsvectormap/dist/jsvectormap.min.js",
+              "node_modules/jsvectormap/dist/maps/world.js"
             ]
           },
           "configurations": {
