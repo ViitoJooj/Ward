@@ -36,6 +36,8 @@ tmp/
 # Sqlite
 *.db
 */*.db
+database.db-wal
+database.db-shm
 
 # MacOS
 .DS_Store

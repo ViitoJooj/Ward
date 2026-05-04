@@ -39,7 +39,7 @@ func hasProtocolApplyScopeColumn(db *sql.DB) bool {
 func Conn() {
 	var err error
 
-	DB, err = sql.Open("sqlite", "./database.db")
+	DB, err = sql.Open("sqlite", "file:./database.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
 	if err != nil {
 		panic(err)
 	}
